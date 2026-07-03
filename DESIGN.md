@@ -107,6 +107,8 @@ spacing:
   container-max: 1440px
 ---
 
+> **Superseded.** This file is kept for history. `DESIGN-v2.md` is canonical — see its "v2 provenance" note for what changed and why.
+
 ## Brand & Style
 
 This design system is engineered for enterprise-grade data management and utility tools. It bridges the gap between high-density technical interfaces and intuitive user experiences. The brand personality is **authoritative, precise, and resilient**, reflecting the mission-critical nature of backup and recovery operations.

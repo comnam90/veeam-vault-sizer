@@ -49,7 +49,7 @@ colors:
   on-background: '#1a1c1c'
   surface-variant: '#e2e2e2'
   tier-performance: '#007f49'
-  tier-capacity: '#283ee8' # VERIFY: sourced from the official PRISM brand palette's "Blue" row; the label on this swatch was truncated/illegible when transcribed, so confirm the exact hex against the source palette asset before shipping
+  tier-capacity: '#283ee8' # PRISM palette, Blue row (confirmed)
   tier-archive: '#505861'
 typography:
   headline-lg:
@@ -110,7 +110,7 @@ spacing:
   container-max: 1440px
 ---
 
-> **v2 provenance.** This supersedes `DESIGN.md`. Two changes from v1: (1) `primary` is now `#007f49`, the current official Veeam brand green per the internal "PRISM" palette — v1 had this token at `#006d34` while its own prose described "Primary" as `#00B159` (actually the value of `primary-container`), an internal inconsistency this resolves. (2) Three dedicated tier-color tokens (`tier-performance` / `tier-capacity` / `tier-archive`) are added — v1 only described tier colors in prose ("Brand Green" / "Deep Blue" / "Medium Gray") with no hex for Capacity at all. They are deliberately separate from `primary`/`secondary` so tier coloring can't drift if semantic button colors change later. Everything else (surfaces, typography, spacing, radii, component prose) is unchanged from v1. See `DESIGN-v2-dark.md` for the dark-theme counterpart.
+> **v2 provenance.** This supersedes `DESIGN.md`. Two changes from v1: (1) `primary` is now `#007f49`, the current official Veeam brand green per the internal "PRISM" palette — v1 had this token at `#006d34` while its own prose described "Primary" as `#00B159` (actually the value of `primary-container`), an internal inconsistency this resolves. (2) Three dedicated tier-color tokens (`tier-performance` / `tier-capacity` / `tier-archive`) are added — v1 only described tier colors in prose ("Brand Green" / "Deep Blue" / "Medium Gray") with no hex for Capacity at all. They are deliberately separate from `primary`/`secondary` so tier coloring can't drift if semantic button colors change later. All three tier hexes (including `tier-capacity`) are confirmed against the source PRISM palette. Everything else (surfaces, typography, spacing, radii, component prose) is unchanged from v1. See `DESIGN-v2-dark.md` for the dark-theme counterpart.
 
 ## Brand & Style
 
@@ -136,7 +136,7 @@ The palette is anchored by **Veeam Green**, used strategically for primary actio
 Dedicated, non-aliased tokens — not the same values as `primary`/`secondary`, so a future rebrand of buttons/nav can't silently recolor the tier system:
 
 - **Performance — `tier-performance` (#007F49):** Brand Green, signifying speed and availability. Equal to `primary`.
-- **Capacity — `tier-capacity` (#283EE8, unverified):** Deep Blue, signifying stability and scale. Sourced from the PRISM palette's Blue row; re-confirm the exact hex before shipping (see YAML comment).
+- **Capacity — `tier-capacity` (#283EE8):** Deep Blue, signifying stability and scale. Sourced from the PRISM palette's Blue row.
 - **Archive — `tier-archive` (#505861):** Medium Gray, signifying cold/dormant storage. Sourced from the PRISM Neutral Family (close to, but distinct from, `secondary`'s `#5b5f60`).
 
 ## Typography

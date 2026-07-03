@@ -108,10 +108,10 @@ Light tokens come from `DESIGN-v2.md`, dark tokens from `DESIGN-v2-dark.md` — 
 | Tier | Light | Dark | Source |
 |---|---|---|---|
 | Performance (green) | `#007f49` | `#00d15f` | = `primary` in each file; both are exact PRISM Green swatches |
-| Capacity (blue) | `#283ee8` *(unverified — see YAML comment in `DESIGN-v2.md`)* | `#57e0ff` | PRISM Blue row; not aliased to any existing token in either theme |
+| Capacity (blue) | `#283ee8` | `#57e0ff` | PRISM Blue row; not aliased to any existing token in either theme |
 | Archive (gray) | `#505861` | `#adacaf` | PRISM Neutral Family; close to but distinct from `secondary`(light)/`outline`(dark) |
 
-The light-mode capacity blue (`#283ee8`) needs a final confirmation pass against the source PRISM palette asset before shipping — the swatch label was illegible when it was transcribed during design review. It's a real value to build with now, not a TODO.
+All tier hexes above are confirmed against the source PRISM brand palette. Note also that in `DESIGN-v2-dark.md`, moving `primary` to `#00d15f` required reassigning `primary-container` (from v1's `#00d169`, now indistinguishable from the new primary, to v1's old `primary` value `#42ee82`) to keep the two tones visually distinct.
 
 ## API Layer
 

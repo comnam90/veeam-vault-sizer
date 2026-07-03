@@ -99,6 +99,8 @@ spacing:
   stack-lg: 24px
 ---
 
+> **Superseded.** This file is kept for history. `DESIGN-v2-dark.md` is canonical — see its "v2 provenance" note for what changed and why.
+
 ## Brand & Style
 
 The design system is engineered for high-performance enterprise environments, specifically tailored for data management and infrastructure monitoring. The brand personality is authoritative, resilient, and technically sophisticated. It aims to evoke a sense of absolute reliability and clarity amidst complex data sets.

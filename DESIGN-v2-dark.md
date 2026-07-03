@@ -18,7 +18,7 @@ colors:
   surface-tint: '#00d15f'
   primary: '#00d15f'
   on-primary: '#003918'
-  primary-container: '#00d169'
+  primary-container: '#42ee82'
   on-primary-container: '#005326'
   inverse-primary: '#007f49'
   secondary: '#9ecaff'
@@ -49,7 +49,7 @@ colors:
   on-background: '#e5e2e1'
   surface-variant: '#353534'
   tier-performance: '#00d15f'
-  tier-capacity: '#57e0ff' # Sourced from the PRISM Blue row; brighter/more saturated than the light-theme tier-capacity by design, for legibility as an accent against a near-black surface (mirrors how primary goes from #007f49 in light to #00d15f in dark)
+  tier-capacity: '#57e0ff' # PRISM palette, Blue row (confirmed). Brighter/more saturated than the light-theme tier-capacity by design, for legibility as an accent against a near-black surface (mirrors how primary goes from #007f49 in light to #00d15f in dark)
   tier-archive: '#adacaf'
 typography:
   headline-lg:
@@ -111,7 +111,7 @@ spacing:
   stack-lg: 24px
 ---
 
-> **v2 provenance.** This supersedes `DESIGN-dark.md`, as the dark-theme counterpart to `DESIGN-v2.md`. Changes from v1: (1) `primary`/`surface-tint` move to `#00d15f`, an exact PRISM Green swatch (v1's `#42ee82` wasn't an approved PRISM color at all — the two closest v1 greens in the PRISM row, `#32f26f` and `#9cffa3`, are explicitly labeled "Not part of PRISM"). `inverse-primary` is updated to `#007f49` to match the new light-theme `primary`, since that's what the token conceptually represents. (2) Typography is now identical to `DESIGN-v2.md` — Inter + JetBrains Mono only, matching sizes/weights — replacing v1's separate Hanken Grotesk (headlines) / Geist (labels) identity, per an explicit decision to keep typography theme-agnostic so switching themes mid-presentation doesn't reflow text. This also fixes a v1 gap: the old typography block was missing `body-sm`, `label-bold`, and `mono-data` entirely, so JetBrains Mono had no defined role in dark mode. (3) Three dedicated tier-color tokens are added, parallel to `DESIGN-v2.md` — v1 had no tier-color guidance of any kind for dark mode. Not touched in this pass: the prose in `DESIGN-dark.md`'s Colors section says background is "#121212," which doesn't match the YAML's `#131313` — a pre-existing v1 inconsistency, out of scope here.
+> **v2 provenance.** This supersedes `DESIGN-dark.md`, as the dark-theme counterpart to `DESIGN-v2.md`. Changes from v1: (1) `primary`/`surface-tint` move to `#00d15f`, an exact PRISM Green swatch (v1's `#42ee82` wasn't an approved PRISM color at all — the two closest v1 greens in the PRISM row, `#32f26f` and `#9cffa3`, are explicitly labeled "Not part of PRISM"). `inverse-primary` is updated to `#007f49` to match the new light-theme `primary`, since that's what the token conceptually represents. Moving `primary` alone would have collapsed `primary`/`primary-container` into near-identical greens (`#00d15f` vs. v1's `#00d169` — a 10-point difference in one channel), so `primary-container` is reassigned to v1's old primary value, `#42ee82`, restoring a visible tonal step. (2) Typography is now identical to `DESIGN-v2.md` — Inter + JetBrains Mono only, matching sizes/weights — replacing v1's separate Hanken Grotesk (headlines) / Geist (labels) identity, per an explicit decision to keep typography theme-agnostic so switching themes mid-presentation doesn't reflow text. This also fixes a v1 gap: the old typography block was missing `body-sm`, `label-bold`, and `mono-data` entirely, so JetBrains Mono had no defined role in dark mode. (3) Three dedicated tier-color tokens are added, parallel to `DESIGN-v2.md` — v1 had no tier-color guidance of any kind for dark mode; all three hexes are confirmed against the source PRISM palette. Not touched in this pass: the prose in `DESIGN-dark.md`'s Colors section says background is "#121212," which doesn't match the YAML's `#131313` — a pre-existing v1 inconsistency, out of scope here.
 
 ## Brand & Style
 
