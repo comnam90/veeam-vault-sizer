@@ -99,7 +99,7 @@ spacing:
   stack-lg: 24px
 ---
 
-> **Superseded.** This file is kept for history. `DESIGN-v2-dark.md` is canonical — see its "v2 provenance" note for what changed and why.
+> **Superseded.** This file is kept for history. `DESIGN-v3-dark.md` is canonical (via `DESIGN-v2-dark.md`) — see its "v3 provenance" note for what changed and why.
 
 ## Brand & Style
 

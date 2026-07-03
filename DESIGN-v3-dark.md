@@ -15,10 +15,10 @@ colors:
   inverse-on-surface: '#313030'
   outline: '#859585'
   outline-variant: '#3c4a3d'
-  surface-tint: '#00d15f'
-  primary: '#00d15f'
+  surface-tint: '#30e378'
+  primary: '#42ee82'
   on-primary: '#003918'
-  primary-container: '#42ee82'
+  primary-container: '#00d169'
   on-primary-container: '#005326'
   inverse-primary: '#007f49'
   secondary: '#9ecaff'
@@ -48,9 +48,9 @@ colors:
   background: '#131313'
   on-background: '#e5e2e1'
   surface-variant: '#353534'
-  tier-performance: '#00d15f'
-  tier-capacity: '#57e0ff' # PRISM palette, Blue row (confirmed). Brighter/more saturated than the light-theme tier-capacity by design, for legibility as an accent against a near-black surface (mirrors how primary goes from #007f49 in light to #00d15f in dark)
-  tier-archive: '#adacaf'
+  tier-performance: '#42ee82'
+  tier-capacity: '#9ecaff'
+  tier-archive: '#859585'
 typography:
   headline-lg:
     fontFamily: Inter
@@ -109,11 +109,17 @@ spacing:
   stack-sm: 8px
   stack-md: 16px
   stack-lg: 24px
+  density-compact: 8px
+  density-comfortable: 16px
 ---
 
-> **Superseded.** This file is kept for history. `DESIGN-v3-dark.md` is canonical — see its "v3 provenance" note for what changed and why.
-
-> **v2 provenance.** This supersedes `DESIGN-dark.md`, as the dark-theme counterpart to `DESIGN-v2.md`. Changes from v1: (1) `primary`/`surface-tint` move to `#00d15f`, an exact PRISM Green swatch (v1's `#42ee82` wasn't an approved PRISM color at all — the two closest v1 greens in the PRISM row, `#32f26f` and `#9cffa3`, are explicitly labeled "Not part of PRISM"). `inverse-primary` is updated to `#007f49` to match the new light-theme `primary`, since that's what the token conceptually represents. Moving `primary` alone would have collapsed `primary`/`primary-container` into near-identical greens (`#00d15f` vs. v1's `#00d169` — a 10-point difference in one channel), so `primary-container` is reassigned to v1's old primary value, `#42ee82`, restoring a visible tonal step. (2) Typography is now identical to `DESIGN-v2.md` — Inter + JetBrains Mono only, matching sizes/weights — replacing v1's separate Hanken Grotesk (headlines) / Geist (labels) identity, per an explicit decision to keep typography theme-agnostic so switching themes mid-presentation doesn't reflow text. This also fixes a v1 gap: the old typography block was missing `body-sm`, `label-bold`, and `mono-data` entirely, so JetBrains Mono had no defined role in dark mode. (3) Three dedicated tier-color tokens are added, parallel to `DESIGN-v2.md` — v1 had no tier-color guidance of any kind for dark mode; all three hexes are confirmed against the source PRISM palette. Not touched in this pass: the prose in `DESIGN-dark.md`'s Colors section says background is "#121212," which doesn't match the YAML's `#131313` — a pre-existing v1 inconsistency, out of scope here.
+> **v3 provenance.** This supersedes `DESIGN-v2-dark.md`. Veeam's Stitch design tool is generating this project's actual dark-mode mockups from this exact token set — "Obsidian Precision," unedited from v1 `DESIGN-dark.md`. Since the Stitch files are now authoritative for color tokens, `primary`/`primary-container`/`surface-tint` revert to their original Obsidian Precision values (`#42ee82`/`#00d169`/`#30e378`), undoing v2's PRISM-pinned `#00d15f`. This is a deliberate reversal, not an oversight: v2 pinned PRISM values because PRISM was believed authoritative at the time; that's since been superseded by the Stitch token files themselves. `inverse-primary` stays at `#007f49` — mechanically derived from the light theme's actual `primary` (`DESIGN-v3.md`, itself unchanged from v2), not part of the revert.
+>
+> `secondary` (`#9ecaff`), `tertiary` (`#ffc4af`), and all surface/neutral tokens are Obsidian Precision's original, untouched values — Stitch hasn't regenerated a dark counterpart to the "Enterprise Precision" light refresh, so there's no new source to adopt here beyond what v1/v2 already had.
+>
+> Three dedicated tier-color tokens are added, parallel to `DESIGN-v3.md` — independent of `primary`/`secondary`/`outline` so tier coloring can't drift if those change again, even though today's values match: `tier-performance` = `primary`, `tier-capacity` = `secondary`, `tier-archive` = `outline` (matching v1's own original tier mapping — "Archive: Medium Gray" was always meant to track `outline` in dark).
+>
+> Two additions carried over from v2, unrelated to the Stitch-vs-PRISM question: **typography** stays Inter + JetBrains Mono only (not Obsidian Precision's original Hanken Grotesk/Geist) — the theme-agnostic-typography decision was a UX call (no reflow when toggling themes mid-presentation), not a palette-authority call. **Spacing** gains `density-compact`/`density-comfortable` tokens (8px/16px) — Obsidian Precision's spacing block never had density tokens at all, even in the original v1 file; the values match this file's own existing `stack-sm`/`stack-md` convention, not a new guess.
 
 ## Brand & Style
 
@@ -123,17 +129,17 @@ The visual style follows a **Modern Corporate** aesthetic with a heavy emphasis 
 
 ## Colors
 
-This design system utilizes a "Deep Slate" dark theme as its primary mode. The palette is anchored by a deep charcoal background to minimize glare and maximize the impact of the **Veeam Green** primary accent (`#00d15f`, an exact PRISM swatch — brighter than the light theme's `#007f49` for legibility against a near-black surface).
+This design system utilizes a "Deep Slate" dark theme as its primary mode. The palette is anchored by a deep charcoal background to minimize glare and maximize the impact of the **Veeam Green** primary accent (`#42ee82`).
 
-Hierarchy is established through tonal shifts rather than dramatic color changes. Primary actions use the high-vibrancy green to ensure quick visual recognition. Secondary elements use subtle grays for outlines and borders to maintain container separation without creating visual noise. Text contrast is strictly managed, using off-whites for primary reading and muted grays for secondary metadata.
+Hierarchy is established through tonal shifts rather than dramatic color changes. Primary actions use the high-vibrancy green to ensure quick visual recognition. Secondary elements (and the Capacity tier) use a bright blue (`#9ecaff`) for clear visual recognition against the dark surface. Text contrast is strictly managed, using off-whites for primary reading and muted grays for secondary metadata.
 
 ### Tier Color Tokens
 
-Dedicated, non-aliased tokens, parallel to `DESIGN-v2.md`'s light-theme set:
+Dedicated, non-aliased tokens, parallel to `DESIGN-v3.md`'s light-theme set:
 
-- **Performance — `tier-performance` (#00d15f):** Equal to `primary`.
-- **Capacity — `tier-capacity` (#57e0ff):** A bright PRISM cyan, chosen for contrast against the dark surface — the analogous relationship to the light theme's deep-blue `tier-capacity` as `primary`'s `#00d15f` is to `#007f49`.
-- **Archive — `tier-archive` (#adacaf):** Sourced from the PRISM Neutral Family; brighter than `outline` (`#859585`) for use as a standalone accent rather than a border.
+- **Performance — `tier-performance` (#42ee82):** Equal to `primary`.
+- **Capacity — `tier-capacity` (#9ecaff):** Equal to `secondary` — matches the actual Stitch-rendered mockups.
+- **Archive — `tier-archive` (#859585):** Equal to `outline` — the original v1 mapping for dark-mode Archive.
 
 ## Typography
 
@@ -143,7 +149,7 @@ Typography is systematic and functional, and deliberately **the same typeface st
 
 The system employs a **12-column fluid grid** for desktop and a **4-column grid** for mobile. A strict 4px base unit governs all spatial relationships, creating a predictable and logical rhythm.
 
-Layouts favor high information density. Gutters are kept tight at 16px to maximize the screen real estate available for data visualization. Content reflows by collapsing sidebars into drawers on mobile, and data tables transition into cards or horizontally scrolling containers.
+Layouts favor high information density. Gutters are kept tight at 16px to maximize the screen real estate available for data visualization. Content reflows by collapsing sidebars into drawers on mobile, and data tables transition into cards or horizontally scrolling containers. Two density modes are available (`density-compact` / `density-comfortable`), matching the light theme.
 
 ## Elevation & Depth
 

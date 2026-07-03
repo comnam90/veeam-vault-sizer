@@ -110,6 +110,8 @@ spacing:
   container-max: 1440px
 ---
 
+> **Superseded.** This file is kept for history. `DESIGN-v3.md` is canonical — see its "v3 provenance" note for what changed and why.
+
 > **v2 provenance.** This supersedes `DESIGN.md`. Two changes from v1: (1) `primary` is now `#007f49`, the current official Veeam brand green per the internal "PRISM" palette — v1 had this token at `#006d34` while its own prose described "Primary" as `#00B159` (actually the value of `primary-container`), an internal inconsistency this resolves. (2) Three dedicated tier-color tokens (`tier-performance` / `tier-capacity` / `tier-archive`) are added — v1 only described tier colors in prose ("Brand Green" / "Deep Blue" / "Medium Gray") with no hex for Capacity at all. They are deliberately separate from `primary`/`secondary` so tier coloring can't drift if semantic button colors change later. All three tier hexes (including `tier-capacity`) are confirmed against the source PRISM palette. Everything else (surfaces, typography, spacing, radii, component prose) is unchanged from v1. See `DESIGN-v2-dark.md` for the dark-theme counterpart.
 
 ## Brand & Style

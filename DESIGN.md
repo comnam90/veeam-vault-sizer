@@ -107,7 +107,7 @@ spacing:
   container-max: 1440px
 ---
 
-> **Superseded.** This file is kept for history. `DESIGN-v2.md` is canonical — see its "v2 provenance" note for what changed and why.
+> **Superseded.** This file is kept for history. `DESIGN-v3.md` is canonical (via `DESIGN-v2.md`) — see its "v3 provenance" note for what changed and why.
 
 ## Brand & Style
 
