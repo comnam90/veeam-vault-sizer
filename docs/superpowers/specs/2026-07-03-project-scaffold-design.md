@@ -11,7 +11,7 @@ Stand up the initial repo — tooling, project structure, design system integrat
 **In scope:**
 - Build tooling, linting, testing, and CI/CD, mirroring the sibling project `vdc-vault-readiness`
 - Project folder structure
-- Tailwind v4 + shadcn/ui wired to this project's own design tokens (`DESIGN-v2.md` light, `DESIGN-v2-dark.md` dark)
+- Tailwind v4 + shadcn/ui wired to this project's own design tokens (`DESIGN-v3.md` light, `DESIGN-v3-dark.md` dark)
 - An app shell: header with title, Simple/Advanced mode toggle (Advanced disabled), and a light/dark/system theme toggle
 - A fully working, tested sizing API layer (types, client, Cloudflare Pages Function proxy, dev-mode proxy) — built but not yet consumed by any form UI
 
@@ -91,7 +91,7 @@ Naming departs from the sibling's `dashboard/` convention in favor of `simple-mo
 
 **Mechanism**: same as the sibling — `@import "tailwindcss"` in `index.css`, CSS custom properties for every token, mapped into utility classes via `@theme inline`. `components.json` uses `new-york` style, `neutral` base color (immediately overridden by this project's own tokens), `cssVariables: true`.
 
-**Fonts**: Inter (UI) + JetBrains Mono (alignment-sensitive data only — IPs, paths, capacity values) loaded via a Google Fonts `<link>` in `index.html`. The same fonts are used in both light and dark themes — a confirmed decision, now recorded directly in `DESIGN-v2-dark.md` (which drops v1's separate Hanken Grotesk/Geist headline and label fonts), so only colors/surfaces/elevation change between themes, not typography.
+**Fonts**: Inter (UI) + JetBrains Mono (alignment-sensitive data only — IPs, paths, capacity values) loaded via a Google Fonts `<link>` in `index.html`. The same fonts are used in both light and dark themes — a confirmed decision, now recorded directly in `DESIGN-v3-dark.md` (which drops both v1's and the Stitch draft's separate headline typefaces), so only colors/surfaces/elevation change between themes, not typography.
 
 **Theme switching**: a `data-theme="light"|"dark"` attribute on `<html>`, defaulting to `system` (resolved via `prefers-color-scheme` on load, then set explicitly once the user picks a theme via the header toggle). Persisted to `localStorage`. Per this project's Tailwind v4 rules (`.claude/rules/tailwindcss.md`), enabling `dark:` utilities against this attribute requires an explicit custom variant in `index.css`:
 
@@ -99,19 +99,21 @@ Naming departs from the sibling's `dashboard/` convention in favor of `simple-mo
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 ```
 
-Light tokens come from `DESIGN-v2.md`, dark tokens from `DESIGN-v2-dark.md` — these supersede `DESIGN.md`/`DESIGN-dark.md` (see each file's "v2 provenance" note for what changed and why) — mapped 1:1 into CSS variables using each file's own token names (`--surface`, `--on-surface`, `--primary`, etc.).
+Light tokens come from `DESIGN-v3.md`, dark tokens from `DESIGN-v3-dark.md` — these supersede `DESIGN-v2.md`/`DESIGN-v2-dark.md` and `DESIGN.md`/`DESIGN-dark.md` (see each file's "v3 provenance" note for what changed and why) — mapped 1:1 into CSS variables using each file's own token names (`--surface`, `--on-surface`, `--primary`, etc.).
 
-**Color format**: per the Tailwind v4 rules doc ("prefer `oklch()` over hex or rgb") and matching the sibling project's convention, every token is stored as OKLCH in `index.css`, converted from the hex values given in `DESIGN-v2.md`/`DESIGN-v2-dark.md`. This is a policy decision recorded here; the exact hex→OKLCH conversions happen during implementation.
+**Color format**: per the Tailwind v4 rules doc ("prefer `oklch()` over hex or rgb") and matching the sibling project's convention, every token is stored as OKLCH in `index.css`, converted from the hex values given in `DESIGN-v3.md`/`DESIGN-v3-dark.md`. This is a policy decision recorded here; the exact hex→OKLCH conversions happen during implementation.
 
-**Tier color tokens**: `DESIGN-v2.md`/`DESIGN-v2-dark.md` now define these explicitly as dedicated `tier-performance` / `tier-capacity` / `tier-archive` YAML tokens (not aliased to `primary`/`secondary`, so tier coloring can't drift if semantic button colors change later), reconciled against Veeam's official "PRISM" brand palette:
+**Source of truth**: v2 reconciled colors against Veeam's official "PRISM" brand palette. That's since been superseded — Veeam's Stitch design tool generates this project's actual mockups from two token files ("Enterprise Precision" light / "Obsidian Precision" dark), and those now take precedence over PRISM for color tokens. Concretely, `secondary` and `tertiary` gain real distinct hues (navy and maroon, light theme) instead of v2's near-duplicate greens and plain grays, and `tier-capacity`/`tier-archive` values change accordingly (see table below). `primary`/`primary-container` stay pinned to v2's values in light mode, since Stitch's own light file reproduces the same seed-vs-computed-tone ambiguity v1 `DESIGN.md` had.
+
+**Tier color tokens**: `DESIGN-v3.md`/`DESIGN-v3-dark.md` define these as dedicated `tier-performance` / `tier-capacity` / `tier-archive` YAML tokens (not aliased to `primary`/`secondary`/`tertiary`, so tier coloring can't drift if semantic button colors change later), currently set equal to the Stitch-rendered semantic tokens:
 
 | Tier | Light | Dark | Source |
 |---|---|---|---|
-| Performance (green) | `#007f49` | `#00d15f` | = `primary` in each file; both are exact PRISM Green swatches |
-| Capacity (blue) | `#283ee8` | `#57e0ff` | PRISM Blue row; not aliased to any existing token in either theme |
-| Archive (gray) | `#505861` | `#adacaf` | PRISM Neutral Family; close to but distinct from `secondary`(light)/`outline`(dark) |
+| Performance (green) | `#007f49` | `#42ee82` | = `primary` in each file |
+| Capacity (blue) | `#42636f` | `#9ecaff` | = `secondary` in each file — matches the actual Stitch-rendered mockups |
+| Archive (gray) | `#505861` | `#859585` | Light: quoted in Enterprise Precision's own prose as its "secondary metadata" text color. Dark: = `outline`, matching v1's original mapping |
 
-All tier hexes above are confirmed against the source PRISM brand palette. Note also that in `DESIGN-v2-dark.md`, moving `primary` to `#00d15f` required reassigning `primary-container` (from v1's `#00d169`, now indistinguishable from the new primary, to v1's old `primary` value `#42ee82`) to keep the two tones visually distinct.
+Dark-theme `primary` reverts from v2's PRISM-pinned `#00d15f` back to Obsidian Precision's original `#42ee82` (and `primary-container`/`surface-tint` revert correspondingly) — the Stitch dark file hasn't been regenerated since v1, so "authoritative" here means its original, unedited values.
 
 ## API Layer
 
