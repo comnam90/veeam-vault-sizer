@@ -13,21 +13,39 @@ export async function onRequestOptions(): Promise<Response> {
 export async function onRequestPost(context: {
   request: Request;
 }): Promise<Response> {
-  const body: unknown = await context.request.json();
+  let body: unknown;
+  try {
+    body = await context.request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+    });
+  }
 
-  const upstream = await fetch(VAULT_SIZER_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  try {
+    const upstream = await fetch(VAULT_SIZER_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-  const data: unknown = await upstream.json();
+    const data: unknown = await upstream.json();
 
-  return new Response(JSON.stringify(data), {
-    status: upstream.ok ? 200 : upstream.status,
-    headers: {
-      "Content-Type": "application/json",
-      ...CORS_HEADERS,
-    },
-  });
+    return new Response(JSON.stringify(data), {
+      status: upstream.ok ? 200 : upstream.status,
+      headers: {
+        "Content-Type": "application/json",
+        ...CORS_HEADERS,
+      },
+    });
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Upstream sizing API unreachable" }),
+      {
+        status: 502,
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+      },
+    );
+  }
 }
