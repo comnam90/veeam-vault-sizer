@@ -88,4 +88,20 @@ describe("useTheme", () => {
 
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
   });
+
+  it("stops listening for OS changes after leaving system mode", () => {
+    const media = mockMatchMedia(true);
+    const { result } = renderHook(() => useTheme());
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    act(() => {
+      result.current.setTheme("light");
+    });
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+
+    act(() => {
+      media.setMatches(true);
+    });
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  });
 });
