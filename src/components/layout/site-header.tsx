@@ -36,6 +36,15 @@ export function SiteHeader() {
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={0} className="cursor-not-allowed">
+                {/*
+                  Radix's roving-focus-group ignores aria-disabled, so
+                  arrow+Enter can still move focus here and flip
+                  aria-checked to true. Currently harmless since this
+                  ToggleGroup is uncontrolled and its value is unconsumed.
+                  When Advanced Mode is wired up, make the ToggleGroup
+                  controlled and reject "advanced" in onValueChange rather
+                  than relying on aria-disabled alone.
+                */}
                 <ToggleGroupItem
                   value="advanced"
                   aria-disabled="true"
