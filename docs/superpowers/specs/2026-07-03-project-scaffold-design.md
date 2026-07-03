@@ -9,6 +9,7 @@ Stand up the initial repo — tooling, project structure, design system integrat
 ## Scope
 
 **In scope:**
+
 - Build tooling, linting, testing, and CI/CD, mirroring the sibling project `vdc-vault-readiness`
 - Project folder structure
 - Tailwind v4 + shadcn/ui wired to this project's own design tokens (`DESIGN-v3.md` light, `DESIGN-v3-dark.md` dark)
@@ -16,6 +17,7 @@ Stand up the initial repo — tooling, project structure, design system integrat
 - A fully working, tested sizing API layer (types, client, Cloudflare Pages Function proxy, dev-mode proxy) — built but not yet consumed by any form UI
 
 **Out of scope (deferred to follow-up specs):**
+
 - The Simple Mode form/results UI (workload data inputs, path/target selection, results sidebar)
 - The mapping from Simple Mode inputs to a `VmAgentRequest` (the actual sizing logic/business rules)
 - Advanced Mode (Repository Manager, Job Builder, Aggregate Projections)
@@ -128,11 +130,11 @@ Light tokens come from `DESIGN-v3.md`, dark tokens from `DESIGN-v3-dark.md` — 
 
 **Tier color tokens**: `DESIGN-v3.md`/`DESIGN-v3-dark.md` define these as dedicated `tier-performance` / `tier-capacity` / `tier-archive` YAML tokens (not aliased to `primary`/`secondary`/`tertiary`, so tier coloring can't drift if semantic button colors change later), currently set equal to the Stitch-rendered semantic tokens:
 
-| Tier | Light | Dark | Source |
-|---|---|---|---|
-| Performance (green) | `#007f49` | `#42ee82` | = `primary` in each file |
-| Capacity (blue) | `#42636f` | `#9ecaff` | = `secondary` in each file — matches the actual Stitch-rendered mockups |
-| Archive (gray) | `#505861` | `#859585` | Light: quoted in Enterprise Precision's own prose as its "secondary metadata" text color. Dark: = `outline`, matching v1's original mapping |
+| Tier                | Light     | Dark      | Source                                                                                                                                      |
+| ------------------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Performance (green) | `#007f49` | `#42ee82` | = `primary` in each file                                                                                                                    |
+| Capacity (blue)     | `#42636f` | `#9ecaff` | = `secondary` in each file — matches the actual Stitch-rendered mockups                                                                     |
+| Archive (gray)      | `#505861` | `#859585` | Light: quoted in Enterprise Precision's own prose as its "secondary metadata" text color. Dark: = `outline`, matching v1's original mapping |
 
 Dark-theme `primary` reverts from v2's PRISM-pinned `#00d15f` back to Obsidian Precision's original `#42ee82` (and `primary-container`/`surface-tint` revert correspondingly) — the Stitch dark file hasn't been regenerated since v1, so "authoritative" here means its original, unedited values.
 
@@ -176,7 +178,9 @@ Matches the sibling's three-workflow setup exactly — no deviation here, unlike
 Design-token decisions above were confirmed during brainstorming; one infra prerequisite for `publish.yml`/`release.yml` is outstanding:
 
 - **Verified gap** (re-checked via `gh secret list` — confirmed empty): this repo has no `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` GitHub Actions secrets configured, unlike the sibling `vdc-vault-readiness`, which has both. A Cloudflare Pages project named `veeam-vault-sizer` (matching `--project-name` in both `publish.yml` and `release.yml`'s deploy job) also needs to exist before either workflow can succeed. Add both secrets and confirm the Pages project before the first deploy is attempted — `ci.yml` (lint/test) has no such dependency and is unaffected.
+- **No TypeScript coverage for `functions/`** (flagged in code review of Task 11): `functions/api/vault-sizer.ts` sits outside both `tsconfig.app.json` (`include: ["src"]`) and `tsconfig.node.json` (`include: ["vite.config.ts"]`), so `tsc -b` never type-checks it, and CI (`ci.yml`) only runs lint + test, no build/typecheck step. ESLint's flat config lints it syntactically but without type-aware checking. A real type error in this file — the one file that talks to a third-party API in production — would currently pass CI silently. Fix: add a `functions/` tsconfig project (with `@cloudflare/workers-types` for accurate `Request`/`Response`/`PagesFunction` typing), wire it into the root `tsconfig.json`'s `references` and into `tsc -b`. Best done alongside the Cloudflare Pages deployment work above, since it's new tooling/structure beyond what the scaffold plan specified verbatim.
 
 Follow-up specs needed before further feature work:
+
 1. Simple Mode calculator: form UI, input→`VmAgentRequest` mapping, results rendering
 2. Advanced Mode: Repository Manager, Job Builder, Aggregate Projections
