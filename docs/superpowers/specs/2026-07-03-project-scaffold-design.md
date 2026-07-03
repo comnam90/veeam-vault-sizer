@@ -11,7 +11,7 @@ Stand up the initial repo — tooling, project structure, design system integrat
 **In scope:**
 - Build tooling, linting, testing, and CI/CD, mirroring the sibling project `vdc-vault-readiness`
 - Project folder structure
-- Tailwind v4 + shadcn/ui wired to this project's own design tokens (`DESIGN.md` light, `DESIGN-dark.md` dark)
+- Tailwind v4 + shadcn/ui wired to this project's own design tokens (`DESIGN-v2.md` light, `DESIGN-v2-dark.md` dark)
 - An app shell: header with title, Simple/Advanced mode toggle (Advanced disabled), and a light/dark/system theme toggle
 - A fully working, tested sizing API layer (types, client, Cloudflare Pages Function proxy, dev-mode proxy) — built but not yet consumed by any form UI
 
@@ -59,12 +59,14 @@ veeam-vault-sizer/
 │   ├── components/
 │   │   ├── layout/
 │   │   │   ├── site-header.tsx     # Title, Simple/Advanced pill (Advanced disabled), theme toggle
+│   │   │   ├── site-header.test.tsx
 │   │   │   └── app-shell.tsx
 │   │   ├── simple-mode/
 │   │   │   └── simple-mode-placeholder.tsx   # "Coming soon" stand-in for this pass
 │   │   └── ui/                     # shadcn components, added as needed
 │   ├── hooks/
-│   │   └── use-theme.ts            # light/dark/system + localStorage
+│   │   ├── use-theme.ts            # light/dark/system + localStorage
+│   │   └── use-theme.test.ts
 │   ├── lib/
 │   │   ├── api/
 │   │   │   ├── vault-sizer-client.ts   # callVaultSizerApi(request) -> fetch(/api/vault-sizer)
@@ -89,7 +91,7 @@ Naming departs from the sibling's `dashboard/` convention in favor of `simple-mo
 
 **Mechanism**: same as the sibling — `@import "tailwindcss"` in `index.css`, CSS custom properties for every token, mapped into utility classes via `@theme inline`. `components.json` uses `new-york` style, `neutral` base color (immediately overridden by this project's own tokens), `cssVariables: true`.
 
-**Fonts**: Inter (UI) + JetBrains Mono (alignment-sensitive data only — IPs, paths, capacity values) loaded via a Google Fonts `<link>` in `index.html`. The same fonts are used in both light and dark themes — `DESIGN-dark.md` specifies different fonts (Hanken Grotesk, Geist) for headlines/labels, but this contradicts CLAUDE.md's explicit, theme-agnostic typography guidance, so only colors/surfaces/elevation change between themes, not typography.
+**Fonts**: Inter (UI) + JetBrains Mono (alignment-sensitive data only — IPs, paths, capacity values) loaded via a Google Fonts `<link>` in `index.html`. The same fonts are used in both light and dark themes — a confirmed decision, now recorded directly in `DESIGN-v2-dark.md` (which drops v1's separate Hanken Grotesk/Geist headline and label fonts), so only colors/surfaces/elevation change between themes, not typography.
 
 **Theme switching**: a `data-theme="light"|"dark"` attribute on `<html>`, defaulting to `system` (resolved via `prefers-color-scheme` on load, then set explicitly once the user picks a theme via the header toggle). Persisted to `localStorage`. Per this project's Tailwind v4 rules (`.claude/rules/tailwindcss.md`), enabling `dark:` utilities against this attribute requires an explicit custom variant in `index.css`:
 
@@ -97,19 +99,19 @@ Naming departs from the sibling's `dashboard/` convention in favor of `simple-mo
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 ```
 
-Light tokens come from `DESIGN.md`, dark tokens from `DESIGN-dark.md`, mapped 1:1 into CSS variables using each file's own token names (`--surface`, `--on-surface`, `--primary`, etc.).
+Light tokens come from `DESIGN-v2.md`, dark tokens from `DESIGN-v2-dark.md` — these supersede `DESIGN.md`/`DESIGN-dark.md` (see each file's "v2 provenance" note for what changed and why) — mapped 1:1 into CSS variables using each file's own token names (`--surface`, `--on-surface`, `--primary`, etc.).
 
-**Color format**: per the Tailwind v4 rules doc ("prefer `oklch()` over hex or rgb") and matching the sibling project's convention, every token is stored as OKLCH in `index.css`, converted from the hex values given in `DESIGN.md`/`DESIGN-dark.md`. This is a policy decision recorded here; the exact hex→OKLCH conversions happen during implementation.
+**Color format**: per the Tailwind v4 rules doc ("prefer `oklch()` over hex or rgb") and matching the sibling project's convention, every token is stored as OKLCH in `index.css`, converted from the hex values given in `DESIGN-v2.md`/`DESIGN-v2-dark.md`. This is a policy decision recorded here; the exact hex→OKLCH conversions happen during implementation.
 
-**Tier color tokens**: "Performance/Capacity/Archive" tier colors are described only in prose (CLAUDE.md, DESIGN.md) and are missing from both YAML token lists in at least one theme (light mode has no blue at all). Proposed values, to become dedicated `--color-tier-performance` / `--color-tier-capacity` / `--color-tier-archive` tokens (not aliased to `primary`/`secondary`, so tier coloring can't drift if semantic button colors change later):
+**Tier color tokens**: `DESIGN-v2.md`/`DESIGN-v2-dark.md` now define these explicitly as dedicated `tier-performance` / `tier-capacity` / `tier-archive` YAML tokens (not aliased to `primary`/`secondary`, so tier coloring can't drift if semantic button colors change later), reconciled against Veeam's official "PRISM" brand palette:
 
-| Tier | Light (hex, pre-OKLCH-conversion) | Dark (hex, pre-OKLCH-conversion) | Source |
+| Tier | Light | Dark | Source |
 |---|---|---|---|
-| Performance (green) | `#006d34` | `#42ee82` | = existing `primary` token in each file |
-| Capacity (blue) | `#1d4ed8` *(new — no light-mode blue exists)* | `#9ecaff` | dark reuses existing `secondary`; light is a new proposed value |
-| Archive (gray) | `#5b5f60` | `#859585` | = existing `secondary` (light) / `outline` (dark) tokens |
+| Performance (green) | `#007f49` | `#00d15f` | = `primary` in each file; both are exact PRISM Green swatches |
+| Capacity (blue) | `#283ee8` *(unverified — see YAML comment in `DESIGN-v2.md`)* | `#57e0ff` | PRISM Blue row; not aliased to any existing token in either theme |
+| Archive (gray) | `#505861` | `#adacaf` | PRISM Neutral Family; close to but distinct from `secondary`(light)/`outline`(dark) |
 
-The capacity blue (`#1d4ed8`) is a real placeholder to adjust once seen on screen, not a TODO.
+The light-mode capacity blue (`#283ee8`) needs a final confirmation pass against the source PRISM palette asset before shipping — the swatch label was illegible when it was transcribed during design review. It's a real value to build with now, not a TODO.
 
 ## API Layer
 
@@ -123,7 +125,7 @@ The capacity blue (`#1d4ed8`) is a real placeholder to adjust once seen on scree
 
 ## App Shell
 
-`site-header.tsx`: app title, a Simple/Advanced pill toggle (Advanced rendered disabled with a "Coming soon" tooltip; Simple is always active for now), and the light/dark/system theme toggle.
+`site-header.tsx`: app title, a Simple/Advanced pill toggle (Advanced rendered disabled with a "Coming soon" tooltip; Simple is always active for now), and the light/dark/system theme toggle. Native `disabled` buttons don't fire the hover/focus events a tooltip needs (no pointer events, removed from tab order), so the Advanced trigger must follow the standard Radix/shadcn Tooltip workaround: keep the inner `<button>` visually disabled (`aria-disabled`, no `disabled` attribute, `pointer-events-none` styling, `tabIndex={-1}`) wrapped in a plain `<span>` that the Tooltip actually attaches its listeners to — otherwise the tooltip silently never appears for mouse or keyboard users.
 
 Deliberately excluded from the shell: the Reset link, settings gear, help icon, and avatar seen in `screen.png`. None of them have a feature behind them yet, so they'd be dead chrome — they get added alongside whatever they control.
 
@@ -133,6 +135,8 @@ Main content area renders a placeholder card ("Simple Mode calculator — coming
 
 - Vitest + React Testing Library, `jsdom` environment, matching the sibling's `vite.config.ts` test block
 - `vault-sizer-client.test.ts` covers the API client's request/response plumbing and error handling (fetch mocked)
+- `use-theme.test.ts` covers theme resolution and persistence: defaults to `system` and resolves it via `prefers-color-scheme`, persists an explicit user choice to `localStorage`, and reads that persisted choice back on next load
+- `site-header.test.tsx` covers the Advanced pill (rendered `aria-disabled`, not clickable, tooltip content present) and the theme toggle cycling through light/dark/system
 - No direct unit test for the Cloudflare Pages Function itself (consistent with the sibling project — Pages Functions aren't practically unit-testable outside a Workers runtime)
 - CI (`ci.yml`) runs lint + test on push and PR
 
@@ -143,6 +147,10 @@ Main content area renders a placeholder card ("Simple Mode calculator — coming
 
 ## Open Questions / Follow-ups
 
-None outstanding for this scaffold — all decisions above were confirmed during brainstorming. Follow-up specs needed before further feature work:
+Design-token decisions above were confirmed during brainstorming; one infra prerequisite for `deploy.yml` is outstanding:
+
+- **Verified gap**: this repo has no `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` GitHub Actions secrets configured (checked via `gh secret list`), unlike the sibling `vdc-vault-readiness`, which has both. A Cloudflare Pages project named `veeam-vault-sizer` (matching `--project-name` in `deploy.yml`) also needs to exist before the workflow can succeed. Add both secrets and confirm the Pages project before the first deploy is attempted — `ci.yml` (lint/test) has no such dependency and is unaffected.
+
+Follow-up specs needed before further feature work:
 1. Simple Mode calculator: form UI, input→`VmAgentRequest` mapping, results rendering
 2. Advanced Mode: Repository Manager, Job Builder, Aggregate Projections

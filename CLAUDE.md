@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repository is pre-implementation: it currently contains only planning and design artifacts, no application code, `package.json`, or build tooling. There are no build, lint, or test commands to run yet. When scaffolding the project, confirm the framework/stack with the user rather than assuming one — `.gitignore` has broad JS-ecosystem entries (Next.js, Nuxt, Vite, vitepress, etc.) but none of these are configured or committed.
 
-Before writing any code, read these two files in full — they are the spec this project is built against, and they win over anything summarized below if the two ever disagree:
+Before writing any code, read these files in full — they are the spec this project is built against, and they win over anything summarized below if they ever disagree:
 
 - `veeam_vault_sizer_project_brief.md` — functional requirements
-- `DESIGN.md` — design system (YAML frontmatter has machine-readable tokens: colors, typography, spacing, radii; prose below it explains usage)
+- `DESIGN-v2.md` (light) / `DESIGN-v2-dark.md` (dark) — design system, superseding `DESIGN.md`/`DESIGN-dark.md` (YAML frontmatter has machine-readable tokens: colors, typography, spacing, radii; prose below it explains usage)
 - `screen.png` — reference mockup of the Simple Mode UI
 
 ## What this project is
@@ -25,9 +25,9 @@ Before writing any code, read these two files in full — they are the spec this
 
 ## Design system notes
 
-`DESIGN.md` is canonical for exact colors/type scale/spacing tokens — don't duplicate them here. Non-obvious usage rules worth remembering:
+`DESIGN-v2.md` / `DESIGN-v2-dark.md` are canonical for exact colors/type scale/spacing tokens — don't duplicate them here. Non-obvious usage rules worth remembering:
 
-- Tier color-coding is load-bearing and consistent throughout the UI: Performance = green, Capacity = blue, Archive = gray.
+- Tier color-coding is load-bearing and consistent throughout the UI: Performance = green, Capacity = blue, Archive = gray — backed by dedicated `tier-performance`/`tier-capacity`/`tier-archive` tokens (not aliases of `primary`/`secondary`).
 - JetBrains Mono is reserved specifically for alignment-sensitive data — IP addresses, file paths, storage capacity values — not general UI text (Inter is the UI typeface).
 - Two density modes exist: "Comfortable" (default) and "Compact" (halves vertical padding in tables/lists), intended for dense utility views like job mapping tables.
 - Depth is conveyed via tonal layering and low-contrast outlines/borders, not shadows — keep elevation subtle and enterprise-feeling rather than decorative.
