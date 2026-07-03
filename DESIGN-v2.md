@@ -15,8 +15,8 @@ colors:
   inverse-on-surface: '#f1f1f1'
   outline: '#6d7b6d'
   outline-variant: '#bccabb'
-  surface-tint: '#006d34'
-  primary: '#006d34'
+  surface-tint: '#007f49'
+  primary: '#007f49'
   on-primary: '#ffffff'
   primary-container: '#00b159'
   on-primary-container: '#003b19'
@@ -48,6 +48,9 @@ colors:
   background: '#f9f9f9'
   on-background: '#1a1c1c'
   surface-variant: '#e2e2e2'
+  tier-performance: '#007f49'
+  tier-capacity: '#283ee8' # PRISM palette, Blue row (confirmed)
+  tier-archive: '#505861'
 typography:
   headline-lg:
     fontFamily: Inter
@@ -107,7 +110,7 @@ spacing:
   container-max: 1440px
 ---
 
-> **Superseded.** This file is kept for history. `DESIGN-v2.md` is canonical — see its "v2 provenance" note for what changed and why.
+> **v2 provenance.** This supersedes `DESIGN.md`. Two changes from v1: (1) `primary` is now `#007f49`, the current official Veeam brand green per the internal "PRISM" palette — v1 had this token at `#006d34` while its own prose described "Primary" as `#00B159` (actually the value of `primary-container`), an internal inconsistency this resolves. (2) Three dedicated tier-color tokens (`tier-performance` / `tier-capacity` / `tier-archive`) are added — v1 only described tier colors in prose ("Brand Green" / "Deep Blue" / "Medium Gray") with no hex for Capacity at all. They are deliberately separate from `primary`/`secondary` so tier coloring can't drift if semantic button colors change later. All three tier hexes (including `tier-capacity`) are confirmed against the source PRISM palette. Everything else (surfaces, typography, spacing, radii, component prose) is unchanged from v1. See `DESIGN-v2-dark.md` for the dark-theme counterpart.
 
 ## Brand & Style
 
@@ -122,19 +125,23 @@ Key attributes:
 
 ## Colors
 
-The palette is anchored by **Veeam Green**, used strategically for primary actions, success states, and key brand touchpoints. 
+The palette is anchored by **Veeam Green**, used strategically for primary actions, success states, and key brand touchpoints.
 
-- **Primary (#00B159):** Used for CTA buttons, active toggle states, and "Healthy" status indicators.
+- **Primary (#007F49):** Used for CTA buttons, active toggle states, and "Healthy" status indicators. Current official Veeam brand green, per the PRISM palette.
 - **Secondary/Text (#2D3132):** A deep slate used for high-contrast typography and primary navigation backgrounds to provide a grounded, professional foundation.
 - **Neutral/Background (#F4F4F4):** A clean, light gray for application backgrounds to reduce eye strain and provide contrast against white component surfaces.
-- **Tier Indicators:** 
-    - **Performance:** Brand Green, signifying speed and availability.
-    - **Capacity:** Deep Blue, signifying stability and scale.
-    - **Archive:** Medium Gray, signifying cold/dormant storage.
+
+### Tier Color Tokens
+
+Dedicated, non-aliased tokens — not the same values as `primary`/`secondary`, so a future rebrand of buttons/nav can't silently recolor the tier system:
+
+- **Performance — `tier-performance` (#007F49):** Brand Green, signifying speed and availability. Equal to `primary`.
+- **Capacity — `tier-capacity` (#283EE8):** Deep Blue, signifying stability and scale. Sourced from the PRISM palette's Blue row.
+- **Archive — `tier-archive` (#505861):** Medium Gray, signifying cold/dormant storage. Sourced from the PRISM Neutral Family (close to, but distinct from, `secondary`'s `#5b5f60`).
 
 ## Typography
 
-This design system utilizes **Inter** for its exceptional legibility in technical contexts. The hierarchy is tight, designed to support high data density.
+This design system utilizes **Inter** for its exceptional legibility in technical contexts. The hierarchy is tight, designed to support high data density. The same typeface is used in both light and dark themes — only color, surface, and elevation tokens change between themes.
 
 - **Headline Styles:** Used for page titles and modal headers. Large headlines use slightly tighter letter spacing for a more "locked-in" feel.
 - **Body Styles:** `body-md` (14px) is the standard for most interface text. `body-sm` (13px) is reserved for secondary information within data tables.
@@ -147,7 +154,7 @@ The layout employs a **Fluid-to-Fixed Grid** model. Content is contained within 
 
 - **Spacing Rhythm:** Based on a 4px baseline. Most components use 8px (small), 16px (medium), or 24px (large) increments.
 - **Data Density:** The design system supports two density modes. The default is "Comfortable," but for complex utility configurations (like backup job mapping), a "Compact" mode reduces vertical padding in tables and lists by 50%.
-- **Responsive Behavior:** 
+- **Responsive Behavior:**
     - **Desktop (1024px+):** Full 12-column grid with persistent left-hand navigation.
     - **Tablet (768px - 1023px):** Navigation collapses into a rail or hamburger menu; margins reduce to 16px.
     - **Mobile (<768px):** Single column flow; complex tables switch to card-based summaries.
@@ -156,7 +163,7 @@ The layout employs a **Fluid-to-Fixed Grid** model. Content is contained within 
 
 To maintain an enterprise-grade feel, depth is communicated through **Tonal Layering** and **Low-Contrast Outlines** rather than heavy shadows.
 
-- **Surface Levels:** 
+- **Surface Levels:**
     - **Level 0 (Background):** #F4F4F4.
     - **Level 1 (Cards/Panels):** #FFFFFF with a 1px border (#E0E0E0).
     - **Level 2 (Modals/Popovers):** #FFFFFF with a subtle, diffused shadow (0px 4px 12px rgba(0,0,0,0.08)).
@@ -174,7 +181,7 @@ The shape language is **Soft (0.25rem)**, leaning towards a more squared, profes
 ## Components
 
 ### Buttons & Actions
-- **Primary:** Solid Veeam Green (#00B159) with white text. High contrast, reserved for the "final" action in a flow.
+- **Primary:** Solid Veeam Green (#007F49) with white text. High contrast, reserved for the "final" action in a flow.
 - **Secondary:** Transparent background with #2D3132 border and text. Used for "Cancel" or "Back."
 - **Ghost:** No border or background until hover. Used for table row actions.
 
@@ -189,7 +196,7 @@ The shape language is **Soft (0.25rem)**, leaning towards a more squared, profes
 - **Toggle Switches:** Used for "Simple/Advanced" modes. The track is neutral gray when off and Veeam Green when active. Labeling should explicitly state the current mode.
 
 ### Storage Tier Indicators
-- **Visuals:** A "Tag" style component with a left-aligned colored dot corresponding to the Tier Color (Performance/Capacity/Archive).
+- **Visuals:** A "Tag" style component with a left-aligned colored dot corresponding to the Tier Color (`tier-performance` / `tier-capacity` / `tier-archive`).
 - **Data Visualization:** Simple horizontal bar charts within table cells to show "Space Used vs. Available," using the Tier Color for the fill.
 
 ### View Switcher

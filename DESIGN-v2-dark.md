@@ -15,12 +15,12 @@ colors:
   inverse-on-surface: '#313030'
   outline: '#859585'
   outline-variant: '#3c4a3d'
-  surface-tint: '#30e378'
-  primary: '#42ee82'
+  surface-tint: '#00d15f'
+  primary: '#00d15f'
   on-primary: '#003918'
-  primary-container: '#00d169'
+  primary-container: '#42ee82'
   on-primary-container: '#005326'
-  inverse-primary: '#006d34'
+  inverse-primary: '#007f49'
   secondary: '#9ecaff'
   on-secondary: '#003258'
   secondary-container: '#1e95f2'
@@ -48,24 +48,26 @@ colors:
   background: '#131313'
   on-background: '#e5e2e1'
   surface-variant: '#353534'
+  tier-performance: '#00d15f'
+  tier-capacity: '#57e0ff' # PRISM palette, Blue row (confirmed). Brighter/more saturated than the light-theme tier-capacity by design, for legibility as an accent against a near-black surface (mirrors how primary goes from #007f49 in light to #00d15f in dark)
+  tier-archive: '#adacaf'
 typography:
   headline-lg:
-    fontFamily: Hanken Grotesk
+    fontFamily: Inter
     fontSize: 32px
-    fontWeight: '700'
+    fontWeight: '600'
     lineHeight: 40px
     letterSpacing: -0.02em
   headline-lg-mobile:
-    fontFamily: Hanken Grotesk
-    fontSize: 24px
-    fontWeight: '700'
-    lineHeight: 32px
-    letterSpacing: -0.01em
-  headline-md:
-    fontFamily: Hanken Grotesk
+    fontFamily: Inter
     fontSize: 24px
     fontWeight: '600'
     lineHeight: 32px
+  headline-md:
+    fontFamily: Inter
+    fontSize: 20px
+    fontWeight: '600'
+    lineHeight: 28px
   body-lg:
     fontFamily: Inter
     fontSize: 16px
@@ -76,12 +78,22 @@ typography:
     fontSize: 14px
     fontWeight: '400'
     lineHeight: 20px
-  label-md:
-    fontFamily: Geist
+  body-sm:
+    fontFamily: Inter
+    fontSize: 13px
+    fontWeight: '400'
+    lineHeight: 18px
+  label-bold:
+    fontFamily: Inter
     fontSize: 12px
-    fontWeight: '500'
+    fontWeight: '600'
     lineHeight: 16px
     letterSpacing: 0.05em
+  mono-data:
+    fontFamily: JetBrains Mono
+    fontSize: 13px
+    fontWeight: '400'
+    lineHeight: 18px
 rounded:
   sm: 0.125rem
   DEFAULT: 0.25rem
@@ -99,7 +111,7 @@ spacing:
   stack-lg: 24px
 ---
 
-> **Superseded.** This file is kept for history. `DESIGN-v2-dark.md` is canonical — see its "v2 provenance" note for what changed and why.
+> **v2 provenance.** This supersedes `DESIGN-dark.md`, as the dark-theme counterpart to `DESIGN-v2.md`. Changes from v1: (1) `primary`/`surface-tint` move to `#00d15f`, an exact PRISM Green swatch (v1's `#42ee82` wasn't an approved PRISM color at all — the two closest v1 greens in the PRISM row, `#32f26f` and `#9cffa3`, are explicitly labeled "Not part of PRISM"). `inverse-primary` is updated to `#007f49` to match the new light-theme `primary`, since that's what the token conceptually represents. Moving `primary` alone would have collapsed `primary`/`primary-container` into near-identical greens (`#00d15f` vs. v1's `#00d169` — a 10-point difference in one channel), so `primary-container` is reassigned to v1's old primary value, `#42ee82`, restoring a visible tonal step. (2) Typography is now identical to `DESIGN-v2.md` — Inter + JetBrains Mono only, matching sizes/weights — replacing v1's separate Hanken Grotesk (headlines) / Geist (labels) identity, per an explicit decision to keep typography theme-agnostic so switching themes mid-presentation doesn't reflow text. This also fixes a v1 gap: the old typography block was missing `body-sm`, `label-bold`, and `mono-data` entirely, so JetBrains Mono had no defined role in dark mode. (3) Three dedicated tier-color tokens are added, parallel to `DESIGN-v2.md` — v1 had no tier-color guidance of any kind for dark mode; all three hexes are confirmed against the source PRISM palette. Not touched in this pass: the prose in `DESIGN-dark.md`'s Colors section says background is "#121212," which doesn't match the YAML's `#131313` — a pre-existing v1 inconsistency, out of scope here.
 
 ## Brand & Style
 
@@ -109,15 +121,21 @@ The visual style follows a **Modern Corporate** aesthetic with a heavy emphasis 
 
 ## Colors
 
-This design system utilizes a "Deep Slate" dark theme as its primary mode. The palette is anchored by a deep charcoal background (#121212) to minimize glare and maximize the impact of the **Veeam Green** primary accent.
+This design system utilizes a "Deep Slate" dark theme as its primary mode. The palette is anchored by a deep charcoal background to minimize glare and maximize the impact of the **Veeam Green** primary accent (`#00d15f`, an exact PRISM swatch — brighter than the light theme's `#007f49` for legibility against a near-black surface).
 
 Hierarchy is established through tonal shifts rather than dramatic color changes. Primary actions use the high-vibrancy green to ensure quick visual recognition. Secondary elements use subtle grays for outlines and borders to maintain container separation without creating visual noise. Text contrast is strictly managed, using off-whites for primary reading and muted grays for secondary metadata.
 
+### Tier Color Tokens
+
+Dedicated, non-aliased tokens, parallel to `DESIGN-v2.md`'s light-theme set:
+
+- **Performance — `tier-performance` (#00d15f):** Equal to `primary`.
+- **Capacity — `tier-capacity` (#57e0ff):** A bright PRISM cyan, chosen for contrast against the dark surface — the analogous relationship to the light theme's deep-blue `tier-capacity` as `primary`'s `#00d15f` is to `#007f49`.
+- **Archive — `tier-archive` (#adacaf):** Sourced from the PRISM Neutral Family; brighter than `outline` (`#859585`) for use as a standalone accent rather than a border.
+
 ## Typography
 
-Typography is systematic and functional. **Hanken Grotesk** provides a sharp, contemporary feel for headlines, while **Inter** ensures maximum legibility for body content and data tables. **Geist** is reserved for labels and technical data, leveraging its monospaced-adjacent metrics for precise alignment in dashboards.
-
-In the dark theme, font weights are slightly adjusted to prevent "light bleed" (irradiation), ensuring that high-contrast text remains crisp. Headlines use tighter tracking to maintain a strong presence, while labels use expanded tracking for better scannability at small sizes.
+Typography is systematic and functional, and deliberately **the same typeface stack as the light theme** — **Inter** for headlines, body, and labels, **JetBrains Mono** for IP addresses, file paths, and storage capacity values. Only color, surface, and elevation tokens change between themes; text metrics stay identical so toggling themes mid-presentation never reflows a layout.
 
 ## Layout & Spacing
 
