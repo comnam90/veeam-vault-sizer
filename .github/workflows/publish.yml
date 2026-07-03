@@ -1,0 +1,27 @@
+name: Deploy to Cloudflare Pages (Manual)
+
+on:
+  workflow_dispatch: # Manual trigger only — automatic deploys run via release.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install & Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ./dist --project-name=veeam-vault-sizer --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
