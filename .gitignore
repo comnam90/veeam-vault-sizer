@@ -149,3 +149,6 @@ vite.config.ts.timestamp-*
 .claude/settings.config.json
 .claude/settings.local.json
 .claude/worktrees/
+
+# Brainstorming visual companion mockups
+.superpowers/
