@@ -27,6 +27,7 @@
   --tier-performance: oklch(0.524 0.128 155.7);
   --tier-capacity: oklch(0.479 0.043 222.7);
   --tier-archive: oklch(0.457 0.018 251.3);
+  --label: oklch(0.457 0.018 251.3);
 }
 
 [data-theme="dark"] {
@@ -53,6 +54,7 @@
   --tier-performance: oklch(0.839 0.203 151.1);
   --tier-capacity: oklch(0.827 0.088 253.4);
   --tier-archive: oklch(0.652 0.03 145.2);
+  --label: oklch(0.825 0.029 143.7);
 }
 
 @theme inline {
@@ -87,6 +89,7 @@
   --color-tier-performance: var(--tier-performance);
   --color-tier-capacity: var(--tier-capacity);
   --color-tier-archive: var(--tier-archive);
+  --color-label: var(--label);
 }
 
 @layer base {
