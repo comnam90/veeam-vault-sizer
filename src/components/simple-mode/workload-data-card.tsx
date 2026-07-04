@@ -1,4 +1,5 @@
 import { useId } from "react";
+import { LoaderCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,7 +165,7 @@ export function WorkloadDataCard({ value, onChange }: WorkloadDataCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2.5 text-xl">
-          <span aria-hidden="true" className="bg-primary size-5 rounded-full" />
+          <LoaderCircle aria-hidden="true" className="text-primary size-5" />
           Workload Data
         </CardTitle>
       </CardHeader>
