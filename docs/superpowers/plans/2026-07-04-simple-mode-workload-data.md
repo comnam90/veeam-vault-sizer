@@ -662,11 +662,15 @@ git commit -m "fix: correct Card corner radius to DESIGN-v3's documented rounded
 - [ ] **Step 1: Write the failing tests**
 
 ```tsx
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WorkloadDataCard } from "./workload-data-card";
-import { DEFAULT_WORKLOAD_DATA_VALUES } from "@/types/simple-mode";
+import {
+  DEFAULT_WORKLOAD_DATA_VALUES,
+  type WorkloadDataValues,
+} from "@/types/simple-mode";
 
 describe("WorkloadDataCard", () => {
   it("renders all fields with their default values", () => {
@@ -717,12 +721,29 @@ describe("WorkloadDataCard", () => {
   it("calls onChange with the updated value when a field is edited", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
-    render(
-      <WorkloadDataCard
-        value={DEFAULT_WORKLOAD_DATA_VALUES}
-        onChange={handleChange}
-      />,
-    );
+
+    // WorkloadDataCard is a controlled component: its <Input> value is bound
+    // directly to the `value` prop, so a plain `vi.fn()` onChange (which never
+    // feeds a new value back in) would make React reset the DOM's displayed
+    // value after every keystroke, corrupting multi-character `user.type()`
+    // input. This harness mirrors how SimpleModePage actually uses the card
+    // (state lives in the parent, onChange updates it) so typing behaves as
+    // a real controlled input would.
+    function Harness() {
+      const [value, setValue] = useState<WorkloadDataValues>(
+        DEFAULT_WORKLOAD_DATA_VALUES,
+      );
+      return (
+        <WorkloadDataCard
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            handleChange(next);
+          }}
+        />
+      );
+    }
+    render(<Harness />);
 
     const sourceSize = screen.getByLabelText(/source data size/i);
     await user.clear(sourceSize);
