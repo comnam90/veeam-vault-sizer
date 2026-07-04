@@ -42,60 +42,26 @@ function requireNumber(raw: string, rules: NumberRules): string | undefined {
   return undefined;
 }
 
+const FIELD_RULES: { key: keyof WorkloadDataValues; rules: NumberRules }[] = [
+  { key: "sourceSizeTB", rules: { exclusiveMin: 0 } },
+  { key: "dailyChangeRatePercent", rules: { min: 0, max: 100 } },
+  { key: "dataReductionPercent", rules: { min: 0, max: 100 } },
+  { key: "yearlyGrowthPercent", rules: { min: 0 } },
+  { key: "shortTermRetentionDays", rules: { integer: true, min: 1 } },
+  { key: "gfsWeekly", rules: { integer: true, min: 0 } },
+  { key: "gfsMonthly", rules: { integer: true, min: 0 } },
+  { key: "gfsYearly", rules: { integer: true, min: 0 } },
+];
+
 export function validateWorkloadData(
   values: WorkloadDataValues,
 ): WorkloadDataErrors {
   const errors: WorkloadDataErrors = {};
 
-  const sourceSizeTBError = requireNumber(values.sourceSizeTB, {
-    exclusiveMin: 0,
-  });
-  if (sourceSizeTBError) errors.sourceSizeTB = sourceSizeTBError;
-
-  const dailyChangeRatePercentError = requireNumber(
-    values.dailyChangeRatePercent,
-    { min: 0, max: 100 },
-  );
-  if (dailyChangeRatePercentError)
-    errors.dailyChangeRatePercent = dailyChangeRatePercentError;
-
-  const dataReductionPercentError = requireNumber(values.dataReductionPercent, {
-    min: 0,
-    max: 100,
-  });
-  if (dataReductionPercentError)
-    errors.dataReductionPercent = dataReductionPercentError;
-
-  const yearlyGrowthPercentError = requireNumber(values.yearlyGrowthPercent, {
-    min: 0,
-  });
-  if (yearlyGrowthPercentError)
-    errors.yearlyGrowthPercent = yearlyGrowthPercentError;
-
-  const shortTermRetentionDaysError = requireNumber(
-    values.shortTermRetentionDays,
-    { integer: true, min: 1 },
-  );
-  if (shortTermRetentionDaysError)
-    errors.shortTermRetentionDays = shortTermRetentionDaysError;
-
-  const gfsWeeklyError = requireNumber(values.gfsWeekly, {
-    integer: true,
-    min: 0,
-  });
-  if (gfsWeeklyError) errors.gfsWeekly = gfsWeeklyError;
-
-  const gfsMonthlyError = requireNumber(values.gfsMonthly, {
-    integer: true,
-    min: 0,
-  });
-  if (gfsMonthlyError) errors.gfsMonthly = gfsMonthlyError;
-
-  const gfsYearlyError = requireNumber(values.gfsYearly, {
-    integer: true,
-    min: 0,
-  });
-  if (gfsYearlyError) errors.gfsYearly = gfsYearlyError;
+  for (const { key, rules } of FIELD_RULES) {
+    const error = requireNumber(values[key], rules);
+    if (error) errors[key] = error;
+  }
 
   return errors;
 }

@@ -35,7 +35,7 @@ function WorkloadField({
   const errorId = useId();
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <Label htmlFor={inputId}>{label}</Label>
       <div className="relative">
         <Input
@@ -87,11 +87,11 @@ function GfsPointBox({ label, value, onChange, error }: GfsPointBoxProps) {
         aria-describedby={error ? errorId : undefined}
         className="text-center"
       />
-      <span className="text-muted-foreground text-center text-[0.65rem] tracking-wide uppercase">
+      <span className="text-muted-foreground text-center text-xs tracking-wide uppercase">
         {label}
       </span>
       {error ? (
-        <p id={errorId} className="text-destructive text-center text-[0.65rem]">
+        <p id={errorId} className="text-destructive text-center text-xs">
           {error}
         </p>
       ) : null}
@@ -100,52 +100,21 @@ function GfsPointBox({ label, value, onChange, error }: GfsPointBoxProps) {
 }
 
 interface GfsPointsFieldProps {
-  weekly: string;
-  monthly: string;
-  yearly: string;
-  onWeeklyChange: (value: string) => void;
-  onMonthlyChange: (value: string) => void;
-  onYearlyChange: (value: string) => void;
-  weeklyError?: string;
-  monthlyError?: string;
-  yearlyError?: string;
+  weekly: Omit<GfsPointBoxProps, "label">;
+  monthly: Omit<GfsPointBoxProps, "label">;
+  yearly: Omit<GfsPointBoxProps, "label">;
 }
 
-function GfsPointsField({
-  weekly,
-  monthly,
-  yearly,
-  onWeeklyChange,
-  onMonthlyChange,
-  onYearlyChange,
-  weeklyError,
-  monthlyError,
-  yearlyError,
-}: GfsPointsFieldProps) {
+function GfsPointsField({ weekly, monthly, yearly }: GfsPointsFieldProps) {
   const groupId = useId();
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <Label id={groupId}>GFS Points (W/M/Y)</Label>
       <div role="group" aria-labelledby={groupId} className="flex gap-2">
-        <GfsPointBox
-          label="Weekly"
-          value={weekly}
-          onChange={onWeeklyChange}
-          error={weeklyError}
-        />
-        <GfsPointBox
-          label="Monthly"
-          value={monthly}
-          onChange={onMonthlyChange}
-          error={monthlyError}
-        />
-        <GfsPointBox
-          label="Yearly"
-          value={yearly}
-          onChange={onYearlyChange}
-          error={yearlyError}
-        />
+        <GfsPointBox label="Weekly" {...weekly} />
+        <GfsPointBox label="Monthly" {...monthly} />
+        <GfsPointBox label="Yearly" {...yearly} />
       </div>
     </div>
   );
@@ -164,7 +133,7 @@ export function WorkloadDataCard({ value, onChange }: WorkloadDataCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2.5 text-xl">
+        <CardTitle className="flex items-center gap-2 text-xl">
           <LoaderCircle aria-hidden="true" className="text-primary size-5" />
           Workload Data
         </CardTitle>
@@ -211,15 +180,21 @@ export function WorkloadDataCard({ value, onChange }: WorkloadDataCardProps) {
             error={errors.shortTermRetentionDays}
           />
           <GfsPointsField
-            weekly={value.gfsWeekly}
-            monthly={value.gfsMonthly}
-            yearly={value.gfsYearly}
-            onWeeklyChange={(v) => setField("gfsWeekly", v)}
-            onMonthlyChange={(v) => setField("gfsMonthly", v)}
-            onYearlyChange={(v) => setField("gfsYearly", v)}
-            weeklyError={errors.gfsWeekly}
-            monthlyError={errors.gfsMonthly}
-            yearlyError={errors.gfsYearly}
+            weekly={{
+              value: value.gfsWeekly,
+              onChange: (v) => setField("gfsWeekly", v),
+              error: errors.gfsWeekly,
+            }}
+            monthly={{
+              value: value.gfsMonthly,
+              onChange: (v) => setField("gfsMonthly", v),
+              error: errors.gfsMonthly,
+            }}
+            yearly={{
+              value: value.gfsYearly,
+              onChange: (v) => setField("gfsYearly", v),
+              error: errors.gfsYearly,
+            }}
           />
         </div>
       </CardContent>
