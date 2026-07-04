@@ -6,6 +6,13 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
 export async function onRequestOptions(): Promise<Response> {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -17,10 +24,7 @@ export async function onRequestPost(context: {
   try {
     body = await context.request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-    });
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
   try {
@@ -32,20 +36,8 @@ export async function onRequestPost(context: {
 
     const data: unknown = await upstream.json();
 
-    return new Response(JSON.stringify(data), {
-      status: upstream.ok ? 200 : upstream.status,
-      headers: {
-        "Content-Type": "application/json",
-        ...CORS_HEADERS,
-      },
-    });
+    return jsonResponse(data, upstream.ok ? 200 : upstream.status);
   } catch {
-    return new Response(
-      JSON.stringify({ error: "Upstream sizing API unreachable" }),
-      {
-        status: 502,
-        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
-      },
-    );
+    return jsonResponse({ error: "Upstream sizing API unreachable" }, 502);
   }
 }
