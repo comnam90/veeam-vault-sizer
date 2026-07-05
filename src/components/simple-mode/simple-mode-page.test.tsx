@@ -4,11 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { SimpleModePage } from "./simple-mode-page";
 
 describe("SimpleModePage", () => {
-  it("renders the Workload Data card, the Vault Configuration card, and a reserved sidebar region", () => {
+  it("renders the Workload Data card, the Repository Configuration card, and a reserved sidebar region", () => {
     render(<SimpleModePage />);
 
     expect(screen.getByText("Workload Data")).toBeInTheDocument();
-    expect(screen.getByText("Vault Configuration")).toBeInTheDocument();
+    expect(screen.getByText("Repository Configuration")).toBeInTheDocument();
     expect(
       screen.getByTestId("simple-mode-sidebar-placeholder"),
     ).toBeInTheDocument();

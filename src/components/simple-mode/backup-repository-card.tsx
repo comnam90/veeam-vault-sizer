@@ -145,7 +145,7 @@ export function BackupRepositoryCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <Network aria-hidden="true" className="text-primary size-5" />
-          Vault Configuration
+          Repository Configuration
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

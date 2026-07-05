@@ -21,10 +21,10 @@ function Harness({ initial }: { initial: RepositoryConfigValues }) {
 }
 
 describe("BackupRepositoryCard", () => {
-  it("renders the Vault Configuration title", () => {
+  it("renders the Repository Configuration title", () => {
     render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
 
-    expect(screen.getByText("Vault Configuration")).toBeInTheDocument();
+    expect(screen.getByText("Repository Configuration")).toBeInTheDocument();
   });
 
   it("does not show the Primary Repository track in Direct mode", () => {
