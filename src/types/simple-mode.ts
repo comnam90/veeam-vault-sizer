@@ -28,11 +28,13 @@ export type RepoType =
   | "vault-azure"
   | "vault-aws"
   | "refs-xfs"
-  | "linux-hardened"
+  | "hardened-repository"
   | "nas"
-  | "s3-compatible"
+  | "dedup-appliance"
   | "aws-s3"
-  | "azure-blob";
+  | "azure-blob"
+  | "s3-compatible"
+  | "google-cloud";
 
 export type RepoCategory = "vault" | "block-file" | "object-storage";
 
@@ -40,22 +42,26 @@ export const REPO_TYPE_CATEGORY: Record<RepoType, RepoCategory> = {
   "vault-azure": "vault",
   "vault-aws": "vault",
   "refs-xfs": "block-file",
-  "linux-hardened": "block-file",
+  "hardened-repository": "block-file",
   nas: "block-file",
-  "s3-compatible": "object-storage",
+  "dedup-appliance": "block-file",
   "aws-s3": "object-storage",
   "azure-blob": "object-storage",
+  "s3-compatible": "object-storage",
+  "google-cloud": "object-storage",
 };
 
 export const REPO_TYPE_LABEL: Record<RepoType, string> = {
   "vault-azure": "Vault Azure",
   "vault-aws": "Vault AWS",
-  "refs-xfs": "ReFS/XFS",
-  "linux-hardened": "Linux Hardened",
-  nas: "NAS",
-  "s3-compatible": "S3 Compatible",
+  "refs-xfs": "Windows / Linux (ReFS / XFS)",
+  "hardened-repository": "Hardened Repository",
+  nas: "NAS (SMB / NFS)",
+  "dedup-appliance": "Dedup Appliance",
   "aws-s3": "AWS S3",
   "azure-blob": "Azure Blob",
+  "s3-compatible": "S3 Compatible",
+  "google-cloud": "Google Cloud",
 };
 
 export const REPO_CATEGORY_LABEL: Record<RepoCategory, string> = {
@@ -64,15 +70,16 @@ export const REPO_CATEGORY_LABEL: Record<RepoCategory, string> = {
   "object-storage": "Object Storage",
 };
 
-// Vault types, Linux Hardened, and every object-storage type support immutability.
-// Plain ReFS/XFS and NAS don't.
+// Vault types, Hardened Repository, and every object-storage type support
+// immutability. Plain ReFS/XFS, NAS, and Dedup Appliance don't.
 export const REPO_TYPES_REQUIRING_IMMUTABILITY = new Set<RepoType>([
   "vault-azure",
   "vault-aws",
-  "linux-hardened",
-  "s3-compatible",
+  "hardened-repository",
   "aws-s3",
   "azure-blob",
+  "s3-compatible",
+  "google-cloud",
 ]);
 
 export function repoTypeRequiresImmutability(type: RepoType): boolean {
@@ -85,21 +92,25 @@ export const ALL_REPO_TYPES: RepoType[] = [
   "vault-azure",
   "vault-aws",
   "refs-xfs",
-  "linux-hardened",
+  "hardened-repository",
   "nas",
-  "s3-compatible",
+  "dedup-appliance",
   "aws-s3",
   "azure-blob",
+  "s3-compatible",
+  "google-cloud",
 ];
 export const PRIMARY_REPO_TYPES: RepoType[] = ALL_REPO_TYPES;
 export const PERFORMANCE_TIER_TYPES: RepoType[] = ALL_REPO_TYPES;
-// No Block/File, no NAS — the brief never lists NAS as a valid Capacity Tier target.
+// Capacity Tier is Vault + Object Storage only — Block/File types (including
+// Dedup Appliance) aren't valid SOBR Capacity Tier extents in the real product.
 export const CAPACITY_TIER_TYPES: RepoType[] = [
   "vault-azure",
   "vault-aws",
-  "s3-compatible",
   "aws-s3",
   "azure-blob",
+  "s3-compatible",
+  "google-cloud",
 ];
 
 export interface RetentionOverride {
@@ -199,7 +210,7 @@ export const DEFAULT_REPOSITORY_CONFIG_VALUES: RepositoryConfigValues = {
     },
   },
   primary: {
-    repoType: "linux-hardened",
+    repoType: "hardened-repository",
     immutableDays: "30",
     retention: { ...DEFAULT_RETENTION_OVERRIDE },
   },

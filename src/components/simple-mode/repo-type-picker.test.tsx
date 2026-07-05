@@ -41,7 +41,7 @@ describe("RepoTypePicker", () => {
       screen.getByRole("button", { name: "Vault Azure" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "ReFS/XFS" }),
+      screen.queryByRole("button", { name: "Windows / Linux (ReFS / XFS)" }),
     ).not.toBeInTheDocument();
   });
 
@@ -105,7 +105,7 @@ describe("RepoTypePicker", () => {
     render(<Harness />);
 
     expect(
-      screen.getByRole("button", { name: "ReFS/XFS" }),
+      screen.getByRole("button", { name: "Windows / Linux (ReFS / XFS)" }),
     ).toBeInTheDocument();
 
     await user.click(
@@ -113,7 +113,7 @@ describe("RepoTypePicker", () => {
     );
 
     expect(
-      screen.queryByRole("button", { name: "ReFS/XFS" }),
+      screen.queryByRole("button", { name: "Windows / Linux (ReFS / XFS)" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "S3 Compatible" }),
