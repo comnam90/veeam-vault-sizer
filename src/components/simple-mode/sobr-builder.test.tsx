@@ -63,7 +63,9 @@ describe("SobrBuilder", () => {
     const handleChange = vi.fn();
     render(<SobrBuilder value={defaultSobr} onChange={handleChange} />);
 
-    await user.click(screen.getByLabelText(/copy backups immediately/i));
+    await user.click(
+      screen.getByLabelText(/copy backups as soon as they are created/i),
+    );
 
     expect(handleChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -85,9 +87,7 @@ describe("SobrBuilder", () => {
 
     await user.click(screen.getByRole("button", { name: /add archive tier/i }));
 
-    expect(
-      screen.getByLabelText(/standalone full backups/i),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/standalone fulls/i)).toBeInTheDocument();
   });
 
   it("collapses Capacity Tier to a ghost block when disabled, matching Archive Tier's pattern", () => {
@@ -105,7 +105,7 @@ describe("SobrBuilder", () => {
       screen.getByRole("button", { name: /add capacity tier/i }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByLabelText(/copy backups immediately/i),
+      screen.queryByLabelText(/copy backups as soon as they are created/i),
     ).not.toBeInTheDocument();
   });
 
@@ -124,12 +124,12 @@ describe("SobrBuilder", () => {
       screen.getByRole("button", { name: /add capacity tier/i }),
     );
     expect(
-      screen.getByLabelText(/copy backups immediately/i),
+      screen.getByLabelText(/copy backups as soon as they are created/i),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /remove/i }));
     expect(
-      screen.queryByLabelText(/copy backups immediately/i),
+      screen.queryByLabelText(/copy backups as soon as they are created/i),
     ).not.toBeInTheDocument();
   });
 
@@ -143,13 +143,17 @@ describe("SobrBuilder", () => {
     await user.click(screen.getByRole("button", { name: /add archive tier/i }));
 
     expect(
-      screen.getByRole("switch", { name: /copy backups immediately/i }),
+      screen.getByRole("switch", {
+        name: /copy backups as soon as they are created/i,
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("switch", { name: /move backups older than/i }),
+      screen.getByRole("switch", {
+        name: /age out of the operational restore window/i,
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("switch", { name: /standalone full backups/i }),
+      screen.getByRole("switch", { name: /standalone fulls/i }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });

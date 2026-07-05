@@ -123,7 +123,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 htmlFor={copyPolicyId}
                 className="font-normal tracking-normal normal-case"
               >
-                Copy backups immediately
+                Copy backups as soon as they are created
               </Label>
             </div>
             <div className="flex items-center gap-2">
@@ -138,12 +138,17 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 htmlFor={movePolicyId}
                 className="font-normal tracking-normal normal-case"
               >
-                Move backups older than
+                Move backups as they age out of the operational restore window
               </Label>
-              {value.capacityTier.movePolicy ? (
+            </div>
+            {value.capacityTier.movePolicy ? (
+              <div className="flex items-center gap-2">
+                <Label htmlFor={capacityMoveDaysId}>
+                  Move backup files older than
+                </Label>
                 <Input
                   id={capacityMoveDaysId}
-                  aria-label="Move backups older than (days)"
+                  aria-label="Move backup files older than (days)"
                   value={value.capacityTier.moveDays}
                   inputMode="numeric"
                   onChange={(e) =>
@@ -154,9 +159,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                   }
                   className="w-20"
                 />
-              ) : null}
-              <span className="text-muted-foreground text-sm">days</span>
-            </div>
+                <span className="text-muted-foreground text-sm">
+                  days (your operational restore window)
+                </span>
+              </div>
+            ) : null}
             {errors?.capacityTier?.moveDays ? (
               <p className="text-destructive text-xs">
                 {errors.capacityTier.moveDays}
@@ -268,7 +275,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 htmlFor={standaloneId}
                 className="font-normal tracking-normal normal-case"
               >
-                Standalone full backups (no shared blocks)
+                Store archived backups as standalone fulls
               </Label>
             </div>
           </>
