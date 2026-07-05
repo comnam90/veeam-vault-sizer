@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BackupRepositoryCard } from "./backup-repository-card";
 import {
@@ -48,6 +48,27 @@ describe("BackupRepositoryCard", () => {
       screen.getByRole("heading", {
         name: /secondary vault\/cloud repository/i,
       }),
+    ).toBeInTheDocument();
+  });
+
+  it("nests the target repository picker inside the Secondary block, not floating loose", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
+
+    await user.click(screen.getByLabelText(/backup copy to vault/i));
+
+    const secondaryHeading = screen.getByRole("heading", {
+      name: /secondary vault\/cloud repository/i,
+    });
+    const secondaryBlock = within(
+      secondaryHeading.parentElement as HTMLElement,
+    );
+
+    expect(
+      secondaryBlock.getByText(/select target repository/i),
+    ).toBeInTheDocument();
+    expect(
+      secondaryBlock.getByText(/customize copy retention/i),
     ).toBeInTheDocument();
   });
 

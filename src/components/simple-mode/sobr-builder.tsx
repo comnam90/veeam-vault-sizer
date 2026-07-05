@@ -68,6 +68,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 })
               }
               aria-invalid={errors?.performanceImmutableDays ? true : undefined}
+              className="w-20"
             />
             {errors?.performanceImmutableDays ? (
               <p className="text-destructive text-xs">
@@ -166,6 +167,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 aria-invalid={
                   errors?.capacityTier?.immutableDays ? true : undefined
                 }
+                className="w-20"
               />
               {errors?.capacityTier?.immutableDays ? (
                 <p className="text-destructive text-xs">
@@ -231,6 +233,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 aria-invalid={
                   errors?.archiveTier?.immutableDays ? true : undefined
                 }
+                className="w-20"
               />
               {errors?.archiveTier?.immutableDays ? (
                 <p className="text-destructive text-xs">

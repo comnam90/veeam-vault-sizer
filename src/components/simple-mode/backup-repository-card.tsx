@@ -69,6 +69,76 @@ export function BackupRepositoryCard({
     onChange({ ...value, targetRepository });
   }
 
+  const targetRepositorySection = (
+    <>
+      <div className="flex flex-col gap-3">
+        <Label id={targetRepoGroupId}>Select Target Repository</Label>
+        <div
+          role="group"
+          aria-labelledby={targetRepoGroupId}
+          className="grid grid-cols-3 gap-3"
+        >
+          <TargetRepositoryCard
+            label="Vault Azure"
+            icon={<Cloud aria-hidden="true" className="size-6" />}
+            selected={value.targetRepository === "vault-azure"}
+            onSelect={() => setTargetRepository("vault-azure")}
+          />
+          <TargetRepositoryCard
+            label="Vault AWS"
+            icon={<Cloud aria-hidden="true" className="size-6" />}
+            selected={value.targetRepository === "vault-aws"}
+            onSelect={() => setTargetRepository("vault-aws")}
+          />
+          <TargetRepositoryCard
+            label="SOBR Builder"
+            icon={<Network aria-hidden="true" className="size-6" />}
+            selected={value.targetRepository === "sobr"}
+            onSelect={() => setTargetRepository("sobr")}
+          />
+        </div>
+      </div>
+
+      {value.targetRepository !== "sobr" ? (
+        <div className="flex flex-col gap-1">
+          <Label htmlFor={targetImmutableId}>Immutable for (Days)</Label>
+          <Input
+            id={targetImmutableId}
+            aria-label="Target repository immutability period (days)"
+            value={value.targetRepositoryImmutableDays}
+            inputMode="numeric"
+            onChange={(e) =>
+              onChange({
+                ...value,
+                targetRepositoryImmutableDays: e.target.value,
+              })
+            }
+            aria-invalid={
+              errors.targetRepositoryImmutableDays ? true : undefined
+            }
+            className="w-20"
+          />
+          {errors.targetRepositoryImmutableDays ? (
+            <p className="text-destructive text-xs">
+              {errors.targetRepositoryImmutableDays}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="border-border rounded-lg border p-4">
+          <h3 className="mb-3 text-sm font-semibold">
+            Scale-Out Backup Repository (SOBR) Design
+          </h3>
+          <SobrBuilder
+            value={value.sobr}
+            errors={errors.sobr}
+            onChange={(sobr) => onChange({ ...value, sobr })}
+          />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -131,6 +201,7 @@ export function BackupRepositoryCard({
                   aria-invalid={
                     errors.primary?.immutableDays ? true : undefined
                   }
+                  className="w-20"
                 />
                 {errors.primary?.immutableDays ? (
                   <p className="text-destructive text-xs">
@@ -155,76 +226,12 @@ export function BackupRepositoryCard({
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-3">
-          <Label id={targetRepoGroupId}>Select Target Repository</Label>
-          <div
-            role="group"
-            aria-labelledby={targetRepoGroupId}
-            className="grid grid-cols-3 gap-3"
-          >
-            <TargetRepositoryCard
-              label="Vault Azure"
-              icon={<Cloud aria-hidden="true" className="size-6" />}
-              selected={value.targetRepository === "vault-azure"}
-              onSelect={() => setTargetRepository("vault-azure")}
-            />
-            <TargetRepositoryCard
-              label="Vault AWS"
-              icon={<Cloud aria-hidden="true" className="size-6" />}
-              selected={value.targetRepository === "vault-aws"}
-              onSelect={() => setTargetRepository("vault-aws")}
-            />
-            <TargetRepositoryCard
-              label="SOBR Builder"
-              icon={<Network aria-hidden="true" className="size-6" />}
-              selected={value.targetRepository === "sobr"}
-              onSelect={() => setTargetRepository("sobr")}
-            />
-          </div>
-        </div>
-
-        {value.targetRepository !== "sobr" ? (
-          <div className="flex flex-col gap-1">
-            <Label htmlFor={targetImmutableId}>Immutable for (Days)</Label>
-            <Input
-              id={targetImmutableId}
-              aria-label="Target repository immutability period (days)"
-              value={value.targetRepositoryImmutableDays}
-              inputMode="numeric"
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  targetRepositoryImmutableDays: e.target.value,
-                })
-              }
-              aria-invalid={
-                errors.targetRepositoryImmutableDays ? true : undefined
-              }
-            />
-            {errors.targetRepositoryImmutableDays ? (
-              <p className="text-destructive text-xs">
-                {errors.targetRepositoryImmutableDays}
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="border-border rounded-lg border p-4">
-            <h3 className="mb-3 text-sm font-semibold">
-              Scale-Out Backup Repository (SOBR) Design
-            </h3>
-            <SobrBuilder
-              value={value.sobr}
-              errors={errors.sobr}
-              onChange={(sobr) => onChange({ ...value, sobr })}
-            />
-          </div>
-        )}
-
         {value.backupPath === "copy" ? (
           <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
             <h3 className="text-sm font-semibold">
               Secondary Vault/Cloud Repository
             </h3>
+            {targetRepositorySection}
             <RetentionOverrideBlock
               context="Secondary"
               checkboxLabel="Customize copy retention"
@@ -236,7 +243,9 @@ export function BackupRepositoryCard({
               }
             />
           </div>
-        ) : null}
+        ) : (
+          targetRepositorySection
+        )}
       </CardContent>
     </Card>
   );
