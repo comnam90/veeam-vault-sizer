@@ -40,8 +40,8 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="border-tier-performance flex flex-col gap-3 border-l-2 pl-4">
+    <div className="flex flex-col gap-3">
+      <div className="border-tier-performance flex flex-col gap-2 border-l-2 pl-4">
         <h3 className="text-tier-performance text-sm font-semibold">
           Performance Tier
         </h3>
@@ -78,7 +78,7 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
         ) : null}
       </div>
 
-      <div className="border-tier-capacity flex flex-col gap-3 border-l-2 pl-4">
+      <div className="border-tier-capacity flex flex-col gap-2 border-l-2 pl-4">
         {!value.capacityTier.enabled ? (
           <>
             <h3 className="text-tier-capacity text-sm font-semibold">
@@ -111,90 +111,98 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
               allowedTypes={CAPACITY_TIER_TYPES}
               onChange={(type) => setCapacityTier({ type })}
             />
-            <div className="flex items-center gap-2">
-              <Switch
-                id={copyPolicyId}
-                checked={value.capacityTier.copyPolicy}
-                onCheckedChange={(checked) =>
-                  setCapacityTier({ copyPolicy: checked })
-                }
-              />
-              <Label
-                htmlFor={copyPolicyId}
-                className="font-normal tracking-normal normal-case"
-              >
-                Copy backups as soon as they are created
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id={movePolicyId}
-                checked={value.capacityTier.movePolicy}
-                onCheckedChange={(checked) =>
-                  setCapacityTier({ movePolicy: checked })
-                }
-              />
-              <Label
-                htmlFor={movePolicyId}
-                className="font-normal tracking-normal normal-case"
-              >
-                Move backups as they age out of the operational restore window
-              </Label>
-            </div>
-            {value.capacityTier.movePolicy ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor={capacityMoveDaysId}>
-                  Move backup files older than
+                <Switch
+                  id={copyPolicyId}
+                  checked={value.capacityTier.copyPolicy}
+                  onCheckedChange={(checked) =>
+                    setCapacityTier({ copyPolicy: checked })
+                  }
+                />
+                <Label
+                  htmlFor={copyPolicyId}
+                  className="font-normal tracking-normal normal-case"
+                >
+                  Copy backups as soon as they are created
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id={movePolicyId}
+                  checked={value.capacityTier.movePolicy}
+                  onCheckedChange={(checked) =>
+                    setCapacityTier({ movePolicy: checked })
+                  }
+                />
+                <Label
+                  htmlFor={movePolicyId}
+                  className="font-normal tracking-normal normal-case"
+                >
+                  Move backups as they age out of the operational restore window
+                </Label>
+              </div>
+            </div>
+            <div className="flex flex-row flex-wrap items-end gap-4">
+              {value.capacityTier.movePolicy ? (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={capacityMoveDaysId}>
+                      Move backup files older than
+                    </Label>
+                    <Input
+                      id={capacityMoveDaysId}
+                      aria-label="Move backup files older than (days)"
+                      value={value.capacityTier.moveDays}
+                      inputMode="numeric"
+                      onChange={(e) =>
+                        setCapacityTier({ moveDays: e.target.value })
+                      }
+                      aria-invalid={
+                        errors?.capacityTier?.moveDays ? true : undefined
+                      }
+                      className="w-20"
+                    />
+                    <span className="text-muted-foreground text-sm">
+                      days (your operational restore window)
+                    </span>
+                  </div>
+                  {errors?.capacityTier?.moveDays ? (
+                    <p className="text-destructive text-xs">
+                      {errors.capacityTier.moveDays}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="flex flex-col gap-1">
+                <Label htmlFor={capacityImmutableId}>
+                  Immutable for (Days)
                 </Label>
                 <Input
-                  id={capacityMoveDaysId}
-                  aria-label="Move backup files older than (days)"
-                  value={value.capacityTier.moveDays}
+                  id={capacityImmutableId}
+                  aria-label="Capacity Tier immutability period (days)"
+                  value={value.capacityTier.immutableDays}
                   inputMode="numeric"
                   onChange={(e) =>
-                    setCapacityTier({ moveDays: e.target.value })
+                    setCapacityTier({ immutableDays: e.target.value })
                   }
                   aria-invalid={
-                    errors?.capacityTier?.moveDays ? true : undefined
+                    errors?.capacityTier?.immutableDays ? true : undefined
                   }
                   className="w-20"
                 />
-                <span className="text-muted-foreground text-sm">
-                  days (your operational restore window)
-                </span>
+                {errors?.capacityTier?.immutableDays ? (
+                  <p className="text-destructive text-xs">
+                    {errors.capacityTier.immutableDays}
+                  </p>
+                ) : null}
               </div>
-            ) : null}
-            {errors?.capacityTier?.moveDays ? (
-              <p className="text-destructive text-xs">
-                {errors.capacityTier.moveDays}
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor={capacityImmutableId}>Immutable for (Days)</Label>
-              <Input
-                id={capacityImmutableId}
-                aria-label="Capacity Tier immutability period (days)"
-                value={value.capacityTier.immutableDays}
-                inputMode="numeric"
-                onChange={(e) =>
-                  setCapacityTier({ immutableDays: e.target.value })
-                }
-                aria-invalid={
-                  errors?.capacityTier?.immutableDays ? true : undefined
-                }
-                className="w-20"
-              />
-              {errors?.capacityTier?.immutableDays ? (
-                <p className="text-destructive text-xs">
-                  {errors.capacityTier.immutableDays}
-                </p>
-              ) : null}
             </div>
           </>
         )}
       </div>
 
-      <div className="border-tier-archive flex flex-col gap-3 border-l-2 pl-4">
+      <div className="border-tier-archive flex flex-col gap-2 border-l-2 pl-4">
         {!value.archiveTier.enabled ? (
           <>
             <h3 className="text-tier-archive text-sm font-semibold">
@@ -222,46 +230,54 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 Remove
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor={archiveMoveDaysId}>
-                Move GFS archives older than
-              </Label>
-              <Input
-                id={archiveMoveDaysId}
-                aria-label="Move GFS archives older than (days)"
-                value={value.archiveTier.moveDays}
-                inputMode="numeric"
-                onChange={(e) => setArchiveTier({ moveDays: e.target.value })}
-                aria-invalid={errors?.archiveTier?.moveDays ? true : undefined}
-                className="w-20"
-              />
-              <span className="text-muted-foreground text-sm">days</span>
-            </div>
-            {errors?.archiveTier?.moveDays ? (
-              <p className="text-destructive text-xs">
-                {errors.archiveTier.moveDays}
-              </p>
-            ) : null}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor={archiveImmutableId}>Immutable for (Days)</Label>
-              <Input
-                id={archiveImmutableId}
-                aria-label="Archive Tier immutability period (days)"
-                value={value.archiveTier.immutableDays}
-                inputMode="numeric"
-                onChange={(e) =>
-                  setArchiveTier({ immutableDays: e.target.value })
-                }
-                aria-invalid={
-                  errors?.archiveTier?.immutableDays ? true : undefined
-                }
-                className="w-20"
-              />
-              {errors?.archiveTier?.immutableDays ? (
-                <p className="text-destructive text-xs">
-                  {errors.archiveTier.immutableDays}
-                </p>
-              ) : null}
+            <div className="flex flex-row flex-wrap items-end gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={archiveMoveDaysId}>
+                    Move GFS archives older than
+                  </Label>
+                  <Input
+                    id={archiveMoveDaysId}
+                    aria-label="Move GFS archives older than (days)"
+                    value={value.archiveTier.moveDays}
+                    inputMode="numeric"
+                    onChange={(e) =>
+                      setArchiveTier({ moveDays: e.target.value })
+                    }
+                    aria-invalid={
+                      errors?.archiveTier?.moveDays ? true : undefined
+                    }
+                    className="w-20"
+                  />
+                  <span className="text-muted-foreground text-sm">days</span>
+                </div>
+                {errors?.archiveTier?.moveDays ? (
+                  <p className="text-destructive text-xs">
+                    {errors.archiveTier.moveDays}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor={archiveImmutableId}>Immutable for (Days)</Label>
+                <Input
+                  id={archiveImmutableId}
+                  aria-label="Archive Tier immutability period (days)"
+                  value={value.archiveTier.immutableDays}
+                  inputMode="numeric"
+                  onChange={(e) =>
+                    setArchiveTier({ immutableDays: e.target.value })
+                  }
+                  aria-invalid={
+                    errors?.archiveTier?.immutableDays ? true : undefined
+                  }
+                  className="w-20"
+                />
+                {errors?.archiveTier?.immutableDays ? (
+                  <p className="text-destructive text-xs">
+                    {errors.archiveTier.immutableDays}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Switch

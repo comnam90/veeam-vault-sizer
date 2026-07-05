@@ -147,7 +147,7 @@ export function BackupRepositoryCard({
           Vault Configuration
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">
+      <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label id={backupPathGroupId}>Backup Path</Label>
           <RadioGroup
