@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from "react";
-import { Cloud, Network } from "lucide-react";
+import { Network } from "lucide-react";
+import { VaultIcon } from "@/components/icons/vault-icon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,13 +81,13 @@ export function BackupRepositoryCard({
         >
           <TargetRepositoryCard
             label="Vault Azure"
-            icon={<Cloud aria-hidden="true" className="size-6" />}
+            icon={<VaultIcon aria-hidden="true" className="size-6" />}
             selected={value.targetRepository === "vault-azure"}
             onSelect={() => setTargetRepository("vault-azure")}
           />
           <TargetRepositoryCard
             label="Vault AWS"
-            icon={<Cloud aria-hidden="true" className="size-6" />}
+            icon={<VaultIcon aria-hidden="true" className="size-6" />}
             selected={value.targetRepository === "vault-aws"}
             onSelect={() => setTargetRepository("vault-aws")}
           />
