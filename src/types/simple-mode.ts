@@ -178,7 +178,7 @@ export const DEFAULT_RETENTION_OVERRIDE: RetentionOverride = {
 
 export const DEFAULT_REPOSITORY_CONFIG_VALUES: RepositoryConfigValues = {
   backupPath: "direct",
-  targetRepository: "sobr",
+  targetRepository: "vault-azure",
   targetRepositoryImmutableDays: "30",
   sobr: {
     performanceType: "refs-xfs",
@@ -199,7 +199,7 @@ export const DEFAULT_REPOSITORY_CONFIG_VALUES: RepositoryConfigValues = {
     },
   },
   primary: {
-    repoType: "refs-xfs",
+    repoType: "linux-hardened",
     immutableDays: "30",
     retention: { ...DEFAULT_RETENTION_OVERRIDE },
   },

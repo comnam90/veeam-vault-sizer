@@ -46,7 +46,7 @@ describe("BackupRepositoryCard", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
-        name: /secondary vault\/cloud repository/i,
+        name: /secondary repository/i,
       }),
     ).toBeInTheDocument();
   });
@@ -58,7 +58,7 @@ describe("BackupRepositoryCard", () => {
     await user.click(screen.getByLabelText(/backup copy to vault/i));
 
     const secondaryHeading = screen.getByRole("heading", {
-      name: /secondary vault\/cloud repository/i,
+      name: /secondary repository/i,
     });
     const secondaryBlock = within(
       secondaryHeading.parentElement as HTMLElement,
@@ -72,8 +72,11 @@ describe("BackupRepositoryCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the SOBR Design Block when SOBR Builder is selected (the default)", () => {
+  it("shows the SOBR Design Block when SOBR Builder is selected", async () => {
+    const user = userEvent.setup();
     render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
+
+    await user.click(screen.getByRole("button", { name: "SOBR Builder" }));
 
     expect(
       screen.getByRole("heading", {
@@ -82,15 +85,9 @@ describe("BackupRepositoryCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the target immutability field for a turnkey Vault choice and hides it for SOBR", async () => {
+  it("shows the target immutability field for a turnkey Vault choice (the default) and hides it for SOBR", async () => {
     const user = userEvent.setup();
     render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
-
-    expect(
-      screen.queryByLabelText(/target repository immutability period/i),
-    ).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Vault Azure" }));
 
     expect(
       screen.getByLabelText(/target repository immutability period/i),
@@ -101,6 +98,12 @@ describe("BackupRepositoryCard", () => {
     expect(
       screen.queryByLabelText(/target repository immutability period/i),
     ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Vault Azure" }));
+
+    expect(
+      screen.getByLabelText(/target repository immutability period/i),
+    ).toBeInTheDocument();
   });
 
   it("shows an inline error on the target immutability field", () => {

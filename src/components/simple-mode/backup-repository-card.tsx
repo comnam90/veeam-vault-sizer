@@ -229,9 +229,7 @@ export function BackupRepositoryCard({
 
         {value.backupPath === "copy" ? (
           <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
-            <h3 className="text-sm font-semibold">
-              Secondary Vault/Cloud Repository
-            </h3>
+            <h3 className="text-sm font-semibold">Secondary Repository</h3>
             {targetRepositorySection}
             <RetentionOverrideBlock
               context="Secondary"
