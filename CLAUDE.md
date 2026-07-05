@@ -14,7 +14,9 @@ Before writing any code, read these files in full — they are the spec this pro
 
 ## What this project is
 
-**Veeam Data Cloud Vault Sizer** — a sizing/estimation tool for Veeam Systems Engineers to model backup infrastructure and calculate storage requirements against Veeam Data Cloud Vault targets, used live in customer-facing presentations. Fidelity and polish matter more than for an internal tool.
+A high-density enterprise backup repository calculator built to model Veeam Data Cloud (VDC) Vault and Scale-Out Backup Repository (SOBR) lifecycles.
+
+Simple Mode serves as a high-fidelity SE Engineering Workbench. Visual layout decisions, labeling taxonomy, and data models must strictly align with native product mechanics (e.g., separating short-term retention from the Capacity Tier's Operational Restore Window) to establish technical credibility and trust with systems engineers, ensuring the tool functions as an authoritative validation console.
 
 ## Functional shape
 
