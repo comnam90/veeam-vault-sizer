@@ -15,7 +15,9 @@ A UX collaborator drafted an initial version of this card (referenced in the bra
 1. **ADR-0001** commits this project to calling Veeam's real sizing API (`VmAgentRequest`) rather than computing sizing locally. That request is a single pipeline with one retention block and no primary/secondary distinction — which raised a real question: does Backup Copy mode need its own independent config, or is the primary side just presentational?
 2. The sibling project `vdc-vault-readiness` (which already integrates the same API) confirmed the single-pipeline request shape, but doesn't have a manual repository builder to compare against.
 
-The user resolved this directly: **Backup Copy mode has two independent sizing pipelines.** Primary On-Prem and Secondary Vault each need full configuration, because Phase 3 will size each one separately — either two frontend API calls, or a backend function that fans one request out into two upstream calls and combines the results. That single decision reshaped the data model, several UI details, and the validation matrix below. Everywhere this spec differs from the original draft, it's because of that correction or one of the smaller ones the user made alongside it (documented inline).
+The user resolved this directly: **Backup Copy mode has two independent sizing pipelines.** Primary and Secondary each need full configuration, because Phase 3 will size each one separately — either two frontend API calls, or a backend function that fans one request out into two upstream calls and combines the results. That single decision reshaped the data model, several UI details, and the validation matrix below. Everywhere this spec differs from the original draft, it's because of that correction or one of the smaller ones the user made alongside it (documented inline).
+
+A first draft of this spec also assumed Primary was on-prem-only (ReFS/XFS, Linux Hardened, NAS) and flagged that as an unconfirmed inference rather than a settled fact. Two corrections followed: Primary needs Vault Azure/Vault AWS (Vault-to-Vault copy, and Vault Advanced-to-Foundation cost-tiering, are both real scenarios), and it needs the cloud-object types too — Direct-to-Object primary architectures (an on-prem object platform or public cloud bucket as the primary landing zone) are now common enough that excluding them would leave Simple Mode unable to model that case. Primary's allowed repo types now match Performance Tier's exactly (all 8 types); only Capacity Tier remains a restricted subset. The card's "Primary On-Prem Repository" label is renamed to "Primary Repository" throughout this spec to reflect that.
 
 ## Scope
 
@@ -24,7 +26,7 @@ The user resolved this directly: **Backup Copy mode has two independent sizing p
 - The Backup Repository Configuration card, placed beneath the Workload Data card in the left column (`lg:col-span-8`).
 - Backup Path toggle: Direct to Vault vs. Backup Copy to Vault.
 - Turnkey target cards: Vault Azure, Vault AWS, SOBR Builder.
-- Sequential track stacking: Primary On-Prem Repository above Secondary Vault/Cloud Repository, shown only in Backup Copy mode.
+- Sequential track stacking: Primary Repository above Secondary Vault/Cloud Repository, shown only in Backup Copy mode. ("Primary," not "Primary On-Prem" — see the repo-type matrix below; Primary is no longer on-prem-only.)
 - The three-tier SOBR Builder (Performance, Capacity, Archive), each tier using a grouped repo-type picker.
 - Independent Capacity Tier policies (Copy, Move) and an Archive Tier that doesn't depend on Capacity Tier being enabled.
 - Per-repo-type immutability inputs, applied consistently across Primary, Performance Tier, and Capacity Tier.
@@ -79,14 +81,9 @@ const REPO_TYPES_REQUIRING_IMMUTABILITY = new Set<RepoType>([
 ]);
 
 // Each context restricts the picker to a fixed subset of RepoType.
-const PRIMARY_REPO_TYPES: RepoType[] = [
-  "vault-azure",
-  "vault-aws",
-  "refs-xfs",
-  "linux-hardened",
-  "nas",
-]; // no cloud-object — a Backup Copy source repo is never object storage in this model
-const PERFORMANCE_TIER_TYPES: RepoType[] = [
+// Primary and Performance Tier currently allow the same full set — see the
+// rationale below — so they share one constant rather than duplicating it.
+const ALL_REPO_TYPES: RepoType[] = [
   "vault-azure",
   "vault-aws",
   "refs-xfs",
@@ -96,6 +93,8 @@ const PERFORMANCE_TIER_TYPES: RepoType[] = [
   "aws-s3",
   "azure-blob",
 ]; // all 8
+const PRIMARY_REPO_TYPES = ALL_REPO_TYPES;
+const PERFORMANCE_TIER_TYPES = ALL_REPO_TYPES;
 const CAPACITY_TIER_TYPES: RepoType[] = [
   "vault-azure",
   "vault-aws",
@@ -105,7 +104,12 @@ const CAPACITY_TIER_TYPES: RepoType[] = [
 ]; // no on-prem, no NAS — the brief never lists NAS as a valid Capacity Tier target
 ```
 
-`PRIMARY_REPO_TYPES` includes Vault Azure/Vault AWS because Backup Copy jobs commonly copy Vault-to-Vault across regions, or from Vault Advanced (unlimited restores) to Vault Foundation (a 20%-restore-limit tier) for cost reasons — real scenarios the user described. Simple Mode doesn't expose the Advanced/Foundation distinction itself; it only needs Primary's repo type to include Vault as an option.
+`PRIMARY_REPO_TYPES` covers the full set for two independent reasons, both real scenarios rather than edge cases:
+
+- **Vault Azure/Vault AWS**: Backup Copy jobs commonly copy Vault-to-Vault across regions, or from Vault Advanced (unlimited restores) to Vault Foundation (a 20%-restore-limit tier) for cost reasons. Simple Mode doesn't expose the Advanced/Foundation distinction itself; it only needs Primary's repo type to include Vault as an option.
+- **S3 Compatible / AWS S3 / Azure Blob**: the industry shift toward Direct-to-Object primary backup architectures means an on-prem object platform (MinIO, Ceph, a local NVMe object appliance) or a public cloud bucket is a common primary landing zone in modern designs, not just legacy ReFS/XFS/NAS repositories. Excluding cloud-object types from Primary would make Simple Mode unable to model that increasingly common case.
+
+Since `PRIMARY_REPO_TYPES` and `PERFORMANCE_TIER_TYPES` are now identical, `repo-type-picker.tsx` renders the same three categories (Vault, On-Prem, Cloud Object Storage) for both Primary and Performance Tier — only Capacity Tier's picker is a genuinely restricted subset.
 
 ```ts
 // Reused identically for Primary and Secondary.
@@ -191,7 +195,7 @@ src/components/simple-mode/
 
 - **`simple-mode-page.tsx`**: adds `RepositoryConfigValues` state (`useState`, defaults below) alongside the existing `WorkloadDataValues` state. Renders `<BackupRepositoryCard>` beneath `WorkloadDataCard` in the same `lg:col-span-8` region, passing `workloadData` down read-only so retention blocks can render the inherited-values summary.
 - **`backup-repository-card.tsx`**: controlled `{ value: RepositoryConfigValues; workloadData: WorkloadDataValues; onChange }`. Renders the Backup Path toggle and the three target cards. Stacks the Primary track above the Secondary block only when `backupPath === 'copy'`. Delegates repo-type selection to `repo-type-picker.tsx`, retention hatches to `retention-override-block.tsx`, and the tier pipeline to `sobr-builder.tsx` when `targetRepository === 'sobr'`.
-- **`repo-type-picker.tsx`**: controlled `{ value: RepoType; allowedTypes: RepoType[]; onChange }`. Renders a category row derived from `REPO_TYPE_CATEGORY`, filtered to whatever categories `allowedTypes` touches, then a row of that category's specific type buttons. The active category is local UI state — it defaults to the category containing `value` and changes only how the picker displays; only the chosen `RepoType` is ever lifted through `onChange`. Used for Primary, Performance Tier, and Capacity Tier, each passing a different `allowedTypes` array.
+- **`repo-type-picker.tsx`**: controlled `{ value: RepoType; allowedTypes: RepoType[]; onChange }`. Renders a category row derived from `REPO_TYPE_CATEGORY`, filtered to whatever categories `allowedTypes` touches, then a row of that category's specific type buttons. The active category is local UI state — it defaults to the category containing `value` and changes only how the picker displays; only the chosen `RepoType` is ever lifted through `onChange`. Used for Primary, Performance Tier, and Capacity Tier; Primary and Performance Tier pass `ALL_REPO_TYPES`, Capacity Tier passes the restricted `CAPACITY_TIER_TYPES`.
 - **`retention-override-block.tsx`**: controlled `{ value: RetentionOverride; workloadData: WorkloadDataValues; label: string; onChange }`. `label` distinguishes "Customize retention" (Primary) from "Customize copy retention" (Secondary); both otherwise render identically.
 - **`sobr-builder.tsx`**: controlled `{ value: SobrConfig; onChange }`. Performance Tier row: `repo-type-picker` plus a conditional immutability field. Capacity Tier row: enable toggle, `repo-type-picker`, independent Copy/Move checkboxes, conditional move-days field, always-on immutability field. Archive Tier row: a dashed empty state ("+ Add Archive Tier") that expands, on click, to move-days, immutability, and the new standalone-full-backups checkbox — its expand affordance is enabled regardless of Capacity Tier's state.
 
@@ -209,7 +213,7 @@ Unlike the original draft, this takes no `workloadValues` parameter. Inherited-v
 Persistent Inline, as originally proposed: every option stays visible and reachable without modals or pagination, so an SE never loses their place mid-demo.
 
 - **Backup Path toggle** and the three target cards (Vault Azure, Vault AWS, SOBR Builder) render as in the reference mockup — a segmented toggle and emerald-bordered selectable cards with a check indicator.
-- **Sequential track stacking**: switching to Copy mode stacks Primary On-Prem above Secondary Vault/Cloud inside the card. Each track is self-contained: its own repo-type picker and its own retention block.
+- **Sequential track stacking**: switching to Copy mode stacks Primary above Secondary Vault/Cloud inside the card. Each track is self-contained: its own repo-type picker and its own retention block. Primary's picker shows all three categories (Vault, On-Prem, Cloud Object Storage), covering both Vault-to-Vault copy scenarios and Direct-to-Object primary architectures — not just the legacy on-prem-only case the name "Primary On-Prem Repository" might suggest.
 - **SOBR Design Block**: Performance Tier's picker shows all three categories (Vault, On-Prem, Cloud Object Storage — 8 types total). Capacity Tier's picker shows two categories (Vault, Cloud Object Storage — 5 types, no NAS). Archive Tier's `+ Add` affordance is always clickable, independent of Capacity Tier's enabled state.
 - **Grouped repo-type picker**: a category row, then a row of that category's specific types — chosen over a flat button row (too wide at 8 options) or a plain dropdown (hides the option set at rest, undermining the "no black box" goal). Individual type names (Vault Azure, Vault AWS, S3 Compatible, AWS S3, Azure Blob, etc.) are never collapsed into a generic label — SEs need to see the exact type they expect, even though only three categories affect the underlying calculation.
 - **Retention inheritance**: both Primary and Secondary default to an unchecked "Customize retention (currently mirroring Workload Data)" line with an inherited summary (e.g. "↳ Retaining 30 Dailies + 4W/12M/3Y"). Checking it reveals the full retention-days-plus-GFS grid, pre-seeded with Workload Data's current values so toggling the checkbox off and back on doesn't lose a sane starting point.
@@ -266,7 +270,6 @@ All controlled-component interaction tests use the stateful-harness pattern from
 
 ## Explicitly deferred to the implementation plan
 
-- **Flagged inference, not confirmed**: `PRIMARY_REPO_TYPES` excludes the three cloud-object types (S3 Compatible, AWS S3, Azure Blob) on the reasoning that a Backup Copy source repository is conventionally fast/local storage, not generic object storage. This wasn't asked directly — only Vault Azure/Vault AWS were explicitly confirmed as additions to Primary's original three on-prem options. Worth a direct check during spec review, since the same kind of inference (Primary being on-prem-only) was wrong once already in this design's history.
-- Exact display copy for Primary's on-prem-style repo type labels (e.g. whether the third `nas` option reads "NAS" or "Windows/NAS" in Primary's context vs. Performance Tier's) — a presentation detail, not a data-model one.
+- Exact display copy for Primary's on-prem-style repo type labels (e.g. whether the `nas` option reads "NAS" or "Windows/NAS" in Primary's context vs. Performance Tier's) — a presentation detail, not a data-model one.
 - Whether `repo-type-picker.tsx`'s category row hides itself entirely when `allowedTypes` spans only one category (not applicable to any current context, but worth deciding once implemented).
 - Exact spacing/animation treatment for the stacking transition between Direct and Copy modes.
