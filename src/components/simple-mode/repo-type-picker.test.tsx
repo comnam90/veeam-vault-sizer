@@ -21,10 +21,10 @@ describe("RepoTypePicker", () => {
 
     expect(screen.getByRole("button", { name: "Vault" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Cloud Object Storage" }),
+      screen.getByRole("button", { name: "Object Storage" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "On-Prem" }),
+      screen.queryByRole("button", { name: "Block / File" }),
     ).not.toBeInTheDocument();
   });
 
@@ -55,9 +55,7 @@ describe("RepoTypePicker", () => {
       />,
     );
 
-    await user.click(
-      screen.getByRole("button", { name: "Cloud Object Storage" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Object Storage" }));
 
     expect(
       screen.getByRole("button", { name: "S3 Compatible" }),

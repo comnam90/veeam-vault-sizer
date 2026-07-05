@@ -34,17 +34,17 @@ export type RepoType =
   | "aws-s3"
   | "azure-blob";
 
-export type RepoCategory = "vault" | "on-prem" | "cloud-object";
+export type RepoCategory = "vault" | "block-file" | "object-storage";
 
 export const REPO_TYPE_CATEGORY: Record<RepoType, RepoCategory> = {
   "vault-azure": "vault",
   "vault-aws": "vault",
-  "refs-xfs": "on-prem",
-  "linux-hardened": "on-prem",
-  nas: "on-prem",
-  "s3-compatible": "cloud-object",
-  "aws-s3": "cloud-object",
-  "azure-blob": "cloud-object",
+  "refs-xfs": "block-file",
+  "linux-hardened": "block-file",
+  nas: "block-file",
+  "s3-compatible": "object-storage",
+  "aws-s3": "object-storage",
+  "azure-blob": "object-storage",
 };
 
 export const REPO_TYPE_LABEL: Record<RepoType, string> = {
@@ -60,11 +60,11 @@ export const REPO_TYPE_LABEL: Record<RepoType, string> = {
 
 export const REPO_CATEGORY_LABEL: Record<RepoCategory, string> = {
   vault: "Vault",
-  "on-prem": "On-Prem",
-  "cloud-object": "Cloud Object Storage",
+  "block-file": "Block / File",
+  "object-storage": "Object Storage",
 };
 
-// Vault types, Linux Hardened, and every cloud-object type support immutability.
+// Vault types, Linux Hardened, and every object-storage type support immutability.
 // Plain ReFS/XFS and NAS don't.
 export const REPO_TYPES_REQUIRING_IMMUTABILITY = new Set<RepoType>([
   "vault-azure",
@@ -93,7 +93,7 @@ export const ALL_REPO_TYPES: RepoType[] = [
 ];
 export const PRIMARY_REPO_TYPES: RepoType[] = ALL_REPO_TYPES;
 export const PERFORMANCE_TIER_TYPES: RepoType[] = ALL_REPO_TYPES;
-// No on-prem, no NAS — the brief never lists NAS as a valid Capacity Tier target.
+// No Block/File, no NAS — the brief never lists NAS as a valid Capacity Tier target.
 export const CAPACITY_TIER_TYPES: RepoType[] = [
   "vault-azure",
   "vault-aws",

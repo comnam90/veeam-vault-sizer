@@ -14,7 +14,11 @@ interface RepoTypePickerProps {
   onChange: (value: RepoType) => void;
 }
 
-const CATEGORY_ORDER: RepoCategory[] = ["vault", "on-prem", "cloud-object"];
+const CATEGORY_ORDER: RepoCategory[] = [
+  "vault",
+  "block-file",
+  "object-storage",
+];
 
 export function RepoTypePicker({
   value,
