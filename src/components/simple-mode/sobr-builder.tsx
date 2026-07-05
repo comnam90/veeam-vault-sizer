@@ -1,7 +1,7 @@
 import { useId } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { RepoTypePicker } from "./repo-type-picker";
 import {
   CAPACITY_TIER_TYPES,
@@ -19,7 +19,6 @@ interface SobrBuilderProps {
 
 export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
   const performanceImmutableId = useId();
-  const capacityEnabledId = useId();
   const copyPolicyId = useId();
   const movePolicyId = useId();
   const capacityMoveDaysId = useId();
@@ -80,35 +79,44 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
       </div>
 
       <div className="border-tier-capacity flex flex-col gap-3 border-l-2 pl-4">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id={capacityEnabledId}
-            checked={value.capacityTier.enabled}
-            onCheckedChange={(checked) =>
-              setCapacityTier({ enabled: checked === true })
-            }
-          />
-          <Label
-            htmlFor={capacityEnabledId}
-            className="text-tier-capacity font-semibold tracking-normal normal-case"
-          >
-            Capacity Tier
-          </Label>
-        </div>
-
-        {value.capacityTier.enabled ? (
+        {!value.capacityTier.enabled ? (
           <>
+            <h3 className="text-tier-capacity text-sm font-semibold">
+              Capacity Tier
+            </h3>
+            <button
+              type="button"
+              onClick={() => setCapacityTier({ enabled: true })}
+              className="text-muted-foreground rounded-lg border border-dashed px-4 py-3 text-left text-sm"
+            >
+              + Add Capacity Tier (Configure Scale-Out Cloud Storage)
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-tier-capacity text-sm font-semibold">
+                Capacity Tier
+              </h3>
+              <button
+                type="button"
+                onClick={() => setCapacityTier({ enabled: false })}
+                className="text-muted-foreground text-xs underline"
+              >
+                Remove
+              </button>
+            </div>
             <RepoTypePicker
               value={value.capacityTier.type}
               allowedTypes={CAPACITY_TIER_TYPES}
               onChange={(type) => setCapacityTier({ type })}
             />
             <div className="flex items-center gap-2">
-              <Checkbox
+              <Switch
                 id={copyPolicyId}
                 checked={value.capacityTier.copyPolicy}
                 onCheckedChange={(checked) =>
-                  setCapacityTier({ copyPolicy: checked === true })
+                  setCapacityTier({ copyPolicy: checked })
                 }
               />
               <Label
@@ -119,11 +127,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
               </Label>
             </div>
             <div className="flex items-center gap-2">
-              <Checkbox
+              <Switch
                 id={movePolicyId}
                 checked={value.capacityTier.movePolicy}
                 onCheckedChange={(checked) =>
-                  setCapacityTier({ movePolicy: checked === true })
+                  setCapacityTier({ movePolicy: checked })
                 }
               />
               <Label
@@ -176,23 +184,37 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
               ) : null}
             </div>
           </>
-        ) : null}
+        )}
       </div>
 
       <div className="border-tier-archive flex flex-col gap-3 border-l-2 pl-4">
-        <h3 className="text-tier-archive text-sm font-semibold">
-          Archive Tier
-        </h3>
         {!value.archiveTier.enabled ? (
-          <button
-            type="button"
-            onClick={() => setArchiveTier({ enabled: true })}
-            className="text-muted-foreground rounded-lg border border-dashed px-4 py-3 text-left text-sm"
-          >
-            + Add Archive Tier (Configure GFS Offloading)
-          </button>
+          <>
+            <h3 className="text-tier-archive text-sm font-semibold">
+              Archive Tier
+            </h3>
+            <button
+              type="button"
+              onClick={() => setArchiveTier({ enabled: true })}
+              className="text-muted-foreground rounded-lg border border-dashed px-4 py-3 text-left text-sm"
+            >
+              + Add Archive Tier (Configure GFS Offloading)
+            </button>
+          </>
         ) : (
           <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-tier-archive text-sm font-semibold">
+                Archive Tier
+              </h3>
+              <button
+                type="button"
+                onClick={() => setArchiveTier({ enabled: false })}
+                className="text-muted-foreground text-xs underline"
+              >
+                Remove
+              </button>
+            </div>
             <div className="flex items-center gap-2">
               <Label htmlFor={archiveMoveDaysId}>
                 Move GFS archives older than
@@ -207,13 +229,6 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 className="w-20"
               />
               <span className="text-muted-foreground text-sm">days</span>
-              <button
-                type="button"
-                onClick={() => setArchiveTier({ enabled: false })}
-                className="text-muted-foreground ml-auto text-xs underline"
-              >
-                Remove
-              </button>
             </div>
             {errors?.archiveTier?.moveDays ? (
               <p className="text-destructive text-xs">
@@ -242,11 +257,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
               ) : null}
             </div>
             <div className="flex items-center gap-2">
-              <Checkbox
+              <Switch
                 id={standaloneId}
                 checked={value.archiveTier.standaloneFullBackups}
                 onCheckedChange={(checked) =>
-                  setArchiveTier({ standaloneFullBackups: checked === true })
+                  setArchiveTier({ standaloneFullBackups: checked })
                 }
               />
               <Label

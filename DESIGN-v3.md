@@ -1,98 +1,98 @@
 ---
 name: Enterprise Precision
 colors:
-  surface: '#f6fbf3'
-  surface-dim: '#d6dcd4'
-  surface-bright: '#f6fbf3'
-  surface-container-lowest: '#ffffff'
-  surface-container-low: '#f0f5ed'
-  surface-container: '#eaefe8'
-  surface-container-high: '#e4eae2'
-  surface-container-highest: '#dfe4dc'
-  on-surface: '#171d18'
-  on-surface-variant: '#3e4940'
-  inverse-surface: '#2c322d'
-  inverse-on-surface: '#edf2eb'
-  outline: '#6e7a70'
-  outline-variant: '#bdcabe'
-  surface-tint: '#007f49'
-  primary: '#007f49'
-  on-primary: '#ffffff'
-  primary-container: '#00b159'
-  on-primary-container: '#003b19'
-  inverse-primary: '#52e082'
-  secondary: '#42636f'
-  on-secondary: '#ffffff'
-  secondary-container: '#c2e5f4'
-  on-secondary-container: '#466774'
-  tertiary: '#93363f'
-  on-tertiary: '#ffffff'
-  tertiary-container: '#b24e56'
-  on-tertiary-container: '#ffeeee'
-  error: '#ba1a1a'
-  on-error: '#ffffff'
-  error-container: '#ffdad6'
-  on-error-container: '#93000a'
-  primary-fixed: '#71fd9b'
-  primary-fixed-dim: '#52e082'
-  on-primary-fixed: '#00210b'
-  on-primary-fixed-variant: '#005226'
-  secondary-fixed: '#c5e8f7'
-  secondary-fixed-dim: '#a9ccda'
-  on-secondary-fixed: '#001f28'
-  on-secondary-fixed-variant: '#294b57'
-  tertiary-fixed: '#ffdada'
-  tertiary-fixed-dim: '#ffb3b5'
-  on-tertiary-fixed: '#40000c'
-  on-tertiary-fixed-variant: '#7f2831'
-  background: '#f6fbf3'
-  on-background: '#171d18'
-  surface-variant: '#dfe4dc'
-  tier-performance: '#007f49'
-  tier-capacity: '#42636f'
-  tier-archive: '#505861'
+  surface: "#f6fbf3"
+  surface-dim: "#d6dcd4"
+  surface-bright: "#f6fbf3"
+  surface-container-lowest: "#ffffff"
+  surface-container-low: "#f0f5ed"
+  surface-container: "#eaefe8"
+  surface-container-high: "#e4eae2"
+  surface-container-highest: "#dfe4dc"
+  on-surface: "#171d18"
+  on-surface-variant: "#3e4940"
+  inverse-surface: "#2c322d"
+  inverse-on-surface: "#edf2eb"
+  outline: "#6e7a70"
+  outline-variant: "#bdcabe"
+  surface-tint: "#007f49"
+  primary: "#007f49"
+  on-primary: "#ffffff"
+  primary-container: "#00b159"
+  on-primary-container: "#003b19"
+  inverse-primary: "#52e082"
+  secondary: "#42636f"
+  on-secondary: "#ffffff"
+  secondary-container: "#c2e5f4"
+  on-secondary-container: "#466774"
+  tertiary: "#93363f"
+  on-tertiary: "#ffffff"
+  tertiary-container: "#b24e56"
+  on-tertiary-container: "#ffeeee"
+  error: "#ba1a1a"
+  on-error: "#ffffff"
+  error-container: "#ffdad6"
+  on-error-container: "#93000a"
+  primary-fixed: "#71fd9b"
+  primary-fixed-dim: "#52e082"
+  on-primary-fixed: "#00210b"
+  on-primary-fixed-variant: "#005226"
+  secondary-fixed: "#c5e8f7"
+  secondary-fixed-dim: "#a9ccda"
+  on-secondary-fixed: "#001f28"
+  on-secondary-fixed-variant: "#294b57"
+  tertiary-fixed: "#ffdada"
+  tertiary-fixed-dim: "#ffb3b5"
+  on-tertiary-fixed: "#40000c"
+  on-tertiary-fixed-variant: "#7f2831"
+  background: "#f6fbf3"
+  on-background: "#171d18"
+  surface-variant: "#dfe4dc"
+  tier-performance: "#007f49"
+  tier-capacity: "#42636f"
+  tier-archive: "#505861"
 typography:
   headline-lg:
     fontFamily: Inter
     fontSize: 32px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 40px
     letterSpacing: -0.02em
   headline-lg-mobile:
     fontFamily: Inter
     fontSize: 24px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 32px
   headline-md:
     fontFamily: Inter
     fontSize: 20px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 28px
   body-lg:
     fontFamily: Inter
     fontSize: 16px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 24px
   body-md:
     fontFamily: Inter
     fontSize: 14px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 20px
   body-sm:
     fontFamily: Inter
     fontSize: 13px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 18px
   label-bold:
     fontFamily: Inter
     fontSize: 12px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 16px
     letterSpacing: 0.05em
   mono-data:
     fontFamily: JetBrains Mono
     fontSize: 13px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 18px
 rounded:
   sm: 0.125rem
@@ -157,18 +157,18 @@ The layout employs a **Fluid-to-Fixed Grid** model. Content is contained within 
 - **Spacing Rhythm:** Based on a 4px baseline. Most components use 8px (small), 16px (medium), or 24px (large) increments.
 - **Data Density:** Two density modes. The default is "Comfortable," but for complex utility configurations (like backup job mapping), a "Compact" mode reduces vertical padding in tables and lists by 50%.
 - **Responsive Behavior:**
-    - **Desktop (1024px+):** Full 12-column grid with persistent left-hand navigation.
-    - **Tablet (768px - 1023px):** Navigation collapses into a rail or hamburger menu; margins reduce to 16px.
-    - **Mobile (<768px):** Single column flow; complex tables switch to card-based summaries.
+  - **Desktop (1024px+):** Full 12-column grid with persistent left-hand navigation.
+  - **Tablet (768px - 1023px):** Navigation collapses into a rail or hamburger menu; margins reduce to 16px.
+  - **Mobile (<768px):** Single column flow; complex tables switch to card-based summaries.
 
 ## Elevation & Depth
 
 To maintain an enterprise-grade feel, depth is communicated through **Tonal Layering** and **Low-Contrast Outlines** rather than heavy shadows.
 
 - **Surface Levels:**
-    - **Level 0 (Background):** `surface` / `background` (`#F6FBF3`).
-    - **Level 1 (Cards/Panels):** `surface-container-lowest` (`#FFFFFF`) with a 1px `outline-variant` border.
-    - **Level 2 (Modals/Popovers):** `surface-container-lowest` with a subtle, diffused shadow (0px 4px 12px rgba(0,0,0,0.08)).
+  - **Level 0 (Background):** `surface` / `background` (`#F6FBF3`).
+  - **Level 1 (Cards/Panels):** `surface-container-lowest` (`#FFFFFF`) with a 1px `outline-variant` border.
+  - **Level 2 (Modals/Popovers):** `surface-container-lowest` with a subtle, diffused shadow (0px 4px 12px rgba(0,0,0,0.08)).
 - **Depth Cues:** Active states in tables use a 2px left-border accent in Veeam Green instead of a full background color change to maintain clean vertical lines.
 - **Backdrop:** Modals use a semi-transparent `on-surface` overlay (60% opacity) to focus attention.
 
@@ -183,29 +183,36 @@ The shape language is **Soft (0.25rem)**, leaning towards a more squared, profes
 ## Components
 
 ### Buttons & Actions
+
 - **Primary:** Solid Veeam Green (`#007F49`) with white text, 4px radius. High contrast, reserved for the "final" action in a flow.
 - **Secondary:** Border 1px `outline`, text `on-surface`, transparent background. Used for "Cancel" or "Back."
 - **Ghost:** Text `primary`, transparent background, used for tertiary actions.
 
 ### Input Fields & Forms
+
 - **Border:** 1px `outline`.
 - **Focus:** 1px solid `primary` with a subtle 2px outer glow of the same color at 20% opacity.
 - **Label:** `body-sm` in `#505861`.
 - **Validation:** Clear 1px colored border for Error (Red) or Success (Green) states.
-- **Toggle Switches:** Used for "Simple/Advanced" modes. The track is neutral gray when off and Veeam Green when active. Labeling should explicitly state the current mode.
+- **Toggle Switches:** Used for "Simple/Advanced" modes and for any boolean that represents a real, sizing/domain-relevant setting (e.g. a SOBR tier's Copy/Move policies, standalone-full-backups) — not just view state. The track is neutral gray when off and Veeam Green when active. Labeling should explicitly state the current mode/state.
+- **Checkboxes:** Reserved for pure UI-disclosure toggles — a boolean whose only job is revealing or hiding other fields, with no meaning of its own once resolved (e.g. "Customize retention"). If a boolean has independent meaning outside the UI, it's a Toggle Switch, not a checkbox — see ADR-0010.
 
 ### Chips & Tags
+
 - **Informational:** Background `surface-container`, text `on-surface`.
 - **Status (Success):** Background `#E1F4EC`, text `primary`.
 - **Status (Error):** Background `error` at 10% opacity, text `error`.
 
 ### Data Tables
+
 - **Header:** `surface-container-low` background, `label-bold` uppercase labels. Row hover state uses `surface-container`. 1px horizontal dividers via `outline-variant`.
 - **Density:** Compact vertical padding (8px) for technical utility views.
 
 ### Storage Tier Indicators
+
 - **Visuals:** A "Tag" style component with a left-aligned colored dot corresponding to the Tier Color (`tier-performance` / `tier-capacity` / `tier-archive`).
 - **Data Visualization:** Simple horizontal bar charts within table cells to show "Space Used vs. Available," using the Tier Color for the fill.
 
 ### View Switcher
+
 - A segmented control (Toggle Group) at the top right of configuration panels allows users to flip between "Simple" (curated settings) and "Advanced" (full granularity) modes. The "Advanced" mode should reveal extra columns in tables or additional fieldsets in forms using a subtle slide-down animation.

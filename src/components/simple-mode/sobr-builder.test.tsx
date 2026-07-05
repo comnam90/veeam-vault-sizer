@@ -75,7 +75,7 @@ describe("SobrBuilder", () => {
     );
   });
 
-  it("shows the standalone-full-backups checkbox once Archive Tier is added", async () => {
+  it("shows the standalone-full-backups switch once Archive Tier is added", async () => {
     const user = userEvent.setup();
     function Harness() {
       const [value, setValue] = useState<SobrConfig>(defaultSobr);
@@ -88,5 +88,69 @@ describe("SobrBuilder", () => {
     expect(
       screen.getByLabelText(/standalone full backups/i),
     ).toBeInTheDocument();
+  });
+
+  it("collapses Capacity Tier to a ghost block when disabled, matching Archive Tier's pattern", () => {
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          capacityTier: { ...defaultSobr.capacityTier, enabled: false },
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /add capacity tier/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/copy backups immediately/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("expands Capacity Tier via + Add Capacity Tier, and collapses it again via Remove", async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [value, setValue] = useState<SobrConfig>({
+        ...defaultSobr,
+        capacityTier: { ...defaultSobr.capacityTier, enabled: false },
+      });
+      return <SobrBuilder value={value} onChange={setValue} />;
+    }
+    render(<Harness />);
+
+    await user.click(
+      screen.getByRole("button", { name: /add capacity tier/i }),
+    );
+    expect(
+      screen.getByLabelText(/copy backups immediately/i),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /remove/i }));
+    expect(
+      screen.queryByLabelText(/copy backups immediately/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders Capacity Tier's Copy/Move policies and Archive Tier's standalone option as switches, not checkboxes", async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [value, setValue] = useState<SobrConfig>(defaultSobr);
+      return <SobrBuilder value={value} onChange={setValue} />;
+    }
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: /add archive tier/i }));
+
+    expect(
+      screen.getByRole("switch", { name: /copy backups immediately/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("switch", { name: /move backups older than/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("switch", { name: /standalone full backups/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 });
