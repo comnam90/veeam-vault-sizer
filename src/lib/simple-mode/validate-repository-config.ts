@@ -109,6 +109,23 @@ function effectiveRetentionOrSkip(
 
 const FLAT_EXIT = (lifetime: ClassLifetime) => lifetime.lifetimeDays;
 
+function checkVaultResidency(
+  retention: EffectiveRetention,
+  entryDays: number,
+  exitFor: (lifetime: ClassLifetime) => number,
+  locationLabel: string,
+  suggestion: string,
+): string | undefined {
+  const violation = findVaultResidencyViolation(
+    computeClassLifetimes(retention),
+    entryDays,
+    exitFor,
+  );
+  return violation
+    ? formatVaultRetentionMessage(violation, locationLabel, suggestion)
+    : undefined;
+}
+
 export function validateRepositoryConfig(
   values: RepositoryConfigValues,
   workloadData: WorkloadDataValues,
@@ -139,18 +156,14 @@ export function validateRepositoryConfig(
     if (error) errors.targetRepositoryImmutableDays = error;
 
     if (targetRetention) {
-      const violation = findVaultResidencyViolation(
-        computeClassLifetimes(targetRetention),
+      const message = checkVaultResidency(
+        targetRetention,
         0,
         FLAT_EXIT,
+        `${REPO_TYPE_LABEL[values.targetRepository]} repository`,
+        `Increase retention (or the relevant GFS count) to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, or choose a non-Vault repository type.`,
       );
-      if (violation) {
-        errors.targetRepositoryVaultRetention = formatVaultRetentionMessage(
-          violation,
-          `${REPO_TYPE_LABEL[values.targetRepository]} repository`,
-          `Increase retention (or the relevant GFS count) to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, or choose a non-Vault repository type.`,
-        );
-      }
+      if (message) errors.targetRepositoryVaultRetention = message;
     }
   }
 
@@ -175,18 +188,14 @@ export function validateRepositoryConfig(
         values.primary.retention,
       );
       if (primaryRetention) {
-        const violation = findVaultResidencyViolation(
-          computeClassLifetimes(primaryRetention),
+        const message = checkVaultResidency(
+          primaryRetention,
           0,
           FLAT_EXIT,
+          "Vault Primary Repository",
+          `Increase retention (or the relevant GFS count) to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, or choose a non-Vault repository type.`,
         );
-        if (violation) {
-          primaryErrors.vaultRetention = formatVaultRetentionMessage(
-            violation,
-            "Vault Primary Repository",
-            `Increase retention (or the relevant GFS count) to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, or choose a non-Vault repository type.`,
-          );
-        }
+        if (message) primaryErrors.vaultRetention = message;
       }
     }
 
@@ -247,18 +256,14 @@ export function validateRepositoryConfig(
           return lifetime.lifetimeDays;
         };
 
-        const violation = findVaultResidencyViolation(
-          computeClassLifetimes(targetRetention),
+        const message = checkVaultResidency(
+          targetRetention,
           0,
           performanceExit,
+          "Vault Performance Tier",
+          `Increase the move threshold to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, enable "Copy backups as soon as they are created" on Capacity Tier, or choose a non-Vault Performance Tier type.`,
         );
-        if (violation) {
-          sobrErrors.performanceVaultRetention = formatVaultRetentionMessage(
-            violation,
-            "Vault Performance Tier",
-            `Increase the move threshold to at least ${VAULT_MINIMUM_RETENTION_DAYS} days, enable "Copy backups as soon as they are created" on Capacity Tier, or choose a non-Vault Performance Tier type.`,
-          );
-        }
+        if (message) sobrErrors.performanceVaultRetention = message;
       }
     }
 
@@ -312,18 +317,14 @@ export function validateRepositoryConfig(
               : lifetime.lifetimeDays;
           };
 
-          const violation = findVaultResidencyViolation(
-            computeClassLifetimes(targetRetention),
+          const message = checkVaultResidency(
+            targetRetention,
             entryDays,
             capacityExit,
+            "Vault Capacity Tier",
+            `Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.`,
           );
-          if (violation) {
-            capacityErrors.vaultRetention = formatVaultRetentionMessage(
-              violation,
-              "Vault Capacity Tier",
-              `Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.`,
-            );
-          }
+          if (message) capacityErrors.vaultRetention = message;
         }
       }
 

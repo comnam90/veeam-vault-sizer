@@ -173,4 +173,35 @@ describe("BackupRepositoryCard", () => {
       screen.getByText(/would only remain on this vault azure repository/i),
     ).toBeInTheDocument();
   });
+
+  it("shows the primary vault-retention message when Primary's retention is under 30 days in Copy mode", () => {
+    function LowPrimaryRetentionHarness() {
+      const [value, setValue] = useState<RepositoryConfigValues>({
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        backupPath: "copy",
+        primary: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.primary,
+          repoType: "vault-azure",
+        },
+      });
+      return (
+        <BackupRepositoryCard
+          value={value}
+          workloadData={{
+            ...DEFAULT_WORKLOAD_DATA_VALUES,
+            shortTermRetentionDays: "10",
+            gfsWeekly: "0",
+            gfsMonthly: "0",
+            gfsYearly: "0",
+          }}
+          onChange={setValue}
+        />
+      );
+    }
+    render(<LowPrimaryRetentionHarness />);
+
+    expect(
+      screen.getByText(/would only remain on this vault primary repository/i),
+    ).toBeInTheDocument();
+  });
 });

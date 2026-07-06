@@ -22,7 +22,7 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "bg-background block size-4 rounded-full shadow transition-transform",
+          "bg-background block size-4 rounded-full transition-transform",
           "data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0.5",
         )}
       />
