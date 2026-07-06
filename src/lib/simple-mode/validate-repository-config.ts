@@ -283,10 +283,15 @@ export function validateRepositoryConfig(
       });
       if (immutableError) capacityErrors.immutableDays = immutableError;
 
+      const moveDaysBlocksEntryDays =
+        !capacityTier.copyPolicy &&
+        capacityTier.movePolicy &&
+        capacityErrors.moveDays !== undefined;
+
       if (
         REPO_TYPE_CATEGORY[capacityTier.type] === "vault" &&
         targetRetention &&
-        !capacityErrors.moveDays
+        !moveDaysBlocksEntryDays
       ) {
         const entryDays = capacityTier.copyPolicy
           ? 0

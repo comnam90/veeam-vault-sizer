@@ -674,6 +674,28 @@ describe("Vault minimum retention", () => {
         }).targetRepositoryVaultRetention,
       ).toBeUndefined();
     });
+
+    it("in Copy mode, is governed by secondaryRetention rather than workloadData", () => {
+      const copyModeValues: RepositoryConfigValues = {
+        ...values,
+        backupPath: "copy",
+        secondaryRetention: {
+          customizeRetention: true,
+          retentionDays: "10",
+          gfsWeekly: "0",
+          gfsMonthly: "0",
+          gfsYearly: "0",
+        },
+      };
+      // workloadData's own retention (30 days, app defaults) would pass —
+      // proving the check actually reads secondaryRetention, not workloadData.
+      expect(
+        validateRepositoryConfig(copyModeValues, DEFAULT_WORKLOAD_DATA_VALUES)
+          .targetRepositoryVaultRetention,
+      ).toBe(
+        "Daily backups would only remain on this Vault Azure repository for 10 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase retention (or the relevant GFS count) to at least 30 days, or choose a non-Vault repository type.",
+      );
+    });
   });
 
   describe("Primary Repository (Backup Copy mode)", () => {
@@ -1007,6 +1029,61 @@ describe("Vault minimum retention", () => {
           },
           { ...workloadData, shortTermRetentionDays: "1" },
         ).sobr?.capacityTier?.vaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("still flags a violation when copyPolicy is on even if movePolicy's moveDays is blank/invalid", () => {
+      // copyPolicy=true means entryDays=0 regardless of moveDays' validity —
+      // an invalid moveDays must not suppress this check (regression test
+      // for a bug where it silently did).
+      const values2: RepositoryConfigValues = {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        backupPath: "direct",
+        targetRepository: "sobr",
+        sobr: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+          performanceType: "refs-xfs",
+          capacityTier: {
+            enabled: true,
+            type: "vault-azure",
+            copyPolicy: true,
+            movePolicy: true,
+            moveDays: "",
+            immutableDays: "30",
+          },
+          archiveTier: {
+            enabled: true,
+            moveDays: "20",
+            immutableDays: "365",
+            standaloneFullBackups: false,
+          },
+        },
+      };
+      const workloadData2: WorkloadDataValues = {
+        ...DEFAULT_WORKLOAD_DATA_VALUES,
+        shortTermRetentionDays: "40",
+        gfsWeekly: "4",
+        gfsMonthly: "0",
+        gfsYearly: "0",
+      };
+      const errors = validateRepositoryConfig(values2, workloadData2);
+      expect(errors.sobr?.capacityTier?.moveDays).toBe("Required");
+      expect(errors.sobr?.capacityTier?.vaultRetention).toBe(
+        'Weekly GFS points would only remain on this Vault Capacity Tier for 20 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.',
+      );
+    });
+
+    it("clears the vault-retention error when a violating Capacity Tier is disabled", () => {
+      const violatingValues: RepositoryConfigValues = {
+        ...values,
+        sobr: {
+          ...values.sobr,
+          capacityTier: { ...values.sobr.capacityTier, enabled: false },
+        },
+      };
+      expect(
+        validateRepositoryConfig(violatingValues, workloadData).sobr
+          ?.capacityTier,
       ).toBeUndefined();
     });
   });
