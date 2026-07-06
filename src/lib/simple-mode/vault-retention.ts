@@ -52,11 +52,11 @@ export function resolveEffectiveRetention(
 // chain-completion reference (ADR-0014). Veeam attaches Monthly/Yearly
 // flags to whichever full is already being created on this cadence, rather
 // than spawning an independently-paced chain per class.
-function drivingCadenceDays(retention: EffectiveRetention): number | null {
+function drivingCadenceDays(retention: EffectiveRetention): number | undefined {
   if (retention.gfsWeekly > 0) return 7;
   if (retention.gfsMonthly > 0) return 30;
   if (retention.gfsYearly > 0) return 365;
-  return null;
+  return undefined;
 }
 
 export function computeClassLifetimes(
@@ -67,7 +67,7 @@ export function computeClassLifetimes(
   ];
 
   const cadence = drivingCadenceDays(retention);
-  if (cadence === null) return lifetimes;
+  if (cadence === undefined) return lifetimes;
 
   const chainFloor = cadence - 1 + retention.retentionDays;
 

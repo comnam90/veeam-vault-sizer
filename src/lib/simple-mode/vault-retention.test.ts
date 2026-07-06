@@ -117,6 +117,34 @@ describe("computeClassLifetimes", () => {
       lifetimeDays: 46,
     });
   });
+
+  it("uses monthly cadence (30) as the chain floor when monthly is the only active GFS class", () => {
+    // chain floor = (30-1)+30 = 59, dominates over N*30=30
+    const lifetimes = computeClassLifetimes({
+      retentionDays: 30,
+      gfsWeekly: 0,
+      gfsMonthly: 1,
+      gfsYearly: 0,
+    });
+    expect(lifetimes.find((l) => l.class === "monthly")).toEqual({
+      class: "monthly",
+      lifetimeDays: 59,
+    });
+  });
+
+  it("uses yearly cadence (365) as the chain floor when yearly is the only active GFS class", () => {
+    // chain floor = (365-1)+100 = 464, dominates over N*365=365
+    const lifetimes = computeClassLifetimes({
+      retentionDays: 100,
+      gfsWeekly: 0,
+      gfsMonthly: 0,
+      gfsYearly: 1,
+    });
+    expect(lifetimes.find((l) => l.class === "yearly")).toEqual({
+      class: "yearly",
+      lifetimeDays: 464,
+    });
+  });
 });
 
 describe("findVaultResidencyViolation", () => {
@@ -148,6 +176,13 @@ describe("findVaultResidencyViolation", () => {
       { class: "daily", lifetimeDays: 10 },
       { class: "weekly", lifetimeDays: 50 },
     ];
+    expect(
+      findVaultResidencyViolation(lifetimes, 14, flatExit),
+    ).toBeUndefined();
+  });
+
+  it("treats lifetime exactly equal to entry as never reaching the tier (not a zero-residency violation)", () => {
+    const lifetimes: ClassLifetime[] = [{ class: "daily", lifetimeDays: 14 }];
     expect(
       findVaultResidencyViolation(lifetimes, 14, flatExit),
     ).toBeUndefined();
