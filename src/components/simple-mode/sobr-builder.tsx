@@ -45,6 +45,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
         <h3 className="text-tier-performance text-sm font-semibold">
           Performance Tier
         </h3>
+        {errors?.performanceVaultRetention ? (
+          <p className="text-destructive text-xs">
+            {errors.performanceVaultRetention}
+          </p>
+        ) : null}
         <RepoTypePicker
           value={value.performanceType}
           allowedTypes={PERFORMANCE_TIER_TYPES}
@@ -106,6 +111,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 Remove
               </button>
             </div>
+            {errors?.capacityTier?.vaultRetention ? (
+              <p className="text-destructive text-xs">
+                {errors.capacityTier.vaultRetention}
+              </p>
+            ) : null}
             <RepoTypePicker
               value={value.capacityTier.type}
               allowedTypes={CAPACITY_TIER_TYPES}

@@ -227,4 +227,47 @@ describe("SobrBuilder", () => {
       ),
     ).not.toBeInTheDocument();
   });
+
+  it("shows the performance vault-retention message when present in errors", () => {
+    render(
+      <SobrBuilder
+        value={{ ...defaultSobr, performanceType: "vault-azure" }}
+        errors={{
+          performanceVaultRetention:
+            'Daily backups would only remain on this Vault Performance Tier for 14 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold to at least 30 days, enable "Copy backups as soon as they are created" on Capacity Tier, or choose a non-Vault Performance Tier type.',
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/would only remain on this vault performance tier/i),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the capacity vault-retention message when present in errors", () => {
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          capacityTier: {
+            ...defaultSobr.capacityTier,
+            enabled: true,
+            type: "vault-azure",
+          },
+        }}
+        errors={{
+          capacityTier: {
+            vaultRetention:
+              'Daily backups would only remain on this Vault Capacity Tier for 16 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.',
+          },
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(/would only remain on this vault capacity tier/i),
+    ).toBeInTheDocument();
+  });
 });
