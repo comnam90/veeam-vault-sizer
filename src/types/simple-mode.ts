@@ -110,6 +110,10 @@ export const BLOCK_GENERATION_DAYS: Partial<Record<RepoType, number>> = {
   "google-cloud": 30,
 };
 
+// Veeam Data Cloud Vault's minimum retention floor (ADR-0013) — a fixed
+// constant, independent of a tier's own configurable `immutableDays` field.
+export const VAULT_MINIMUM_RETENTION_DAYS = 30;
+
 // Primary and Performance Tier allow the full set: Vault-to-Vault copy jobs
 // and Direct-to-Object primary architectures are both real scenarios.
 export const ALL_REPO_TYPES: RepoType[] = [
@@ -191,13 +195,20 @@ export interface RepositoryConfigValues {
 
 export interface RepositoryConfigErrors {
   targetRepositoryImmutableDays?: string;
+  targetRepositoryVaultRetention?: string;
   primary?: {
     immutableDays?: string;
     retention?: RetentionOverrideErrors;
+    vaultRetention?: string;
   };
   sobr?: {
     performanceImmutableDays?: string;
-    capacityTier?: { moveDays?: string; immutableDays?: string };
+    performanceVaultRetention?: string;
+    capacityTier?: {
+      moveDays?: string;
+      immutableDays?: string;
+      vaultRetention?: string;
+    };
     archiveTier?: {
       moveDays?: string;
       immutableDays?: string;
