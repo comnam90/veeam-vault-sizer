@@ -621,6 +621,27 @@ describe("Vault minimum retention", () => {
     expect(errors.sobr?.capacityTier?.vaultRetention).toBeUndefined();
   });
 
+  it("skips every Vault-retention check when workloadData itself is invalid and no override customizes retention", () => {
+    const values: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "direct",
+      targetRepository: "vault-azure",
+      targetRepositoryImmutableDays: "30",
+    };
+    const invalidWorkloadData: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      shortTermRetentionDays: "10",
+      gfsWeekly: "-1",
+    };
+    // shortTermRetentionDays=10 would otherwise violate (10 < 30) if computed,
+    // but gfsWeekly=-1 is itself invalid, so the check must skip rather than
+    // compute against corrupted input.
+    expect(
+      validateRepositoryConfig(values, invalidWorkloadData)
+        .targetRepositoryVaultRetention,
+    ).toBeUndefined();
+  });
+
   describe("turnkey target", () => {
     const values: RepositoryConfigValues = {
       ...DEFAULT_REPOSITORY_CONFIG_VALUES,
@@ -792,6 +813,84 @@ describe("Vault minimum retention", () => {
           },
           workloadData,
         ).sobr?.performanceVaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("flags a Vault Performance Tier fed directly to Archive Tier (no Capacity Tier) that moves out before 30 days", () => {
+      const archiveOnlyValues: RepositoryConfigValues = {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        backupPath: "direct",
+        targetRepository: "sobr",
+        sobr: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+          performanceType: "vault-azure",
+          performanceImmutableDays: "30",
+          capacityTier: {
+            enabled: false,
+            type: "s3-compatible",
+            copyPolicy: false,
+            movePolicy: false,
+            moveDays: "",
+            immutableDays: "",
+          },
+          archiveTier: {
+            enabled: true,
+            moveDays: "20",
+            immutableDays: "365",
+            standaloneFullBackups: false,
+          },
+        },
+      };
+      const workloadData: WorkloadDataValues = {
+        ...DEFAULT_WORKLOAD_DATA_VALUES,
+        shortTermRetentionDays: "30",
+        gfsWeekly: "4",
+        gfsMonthly: "0",
+        gfsYearly: "0",
+      };
+      expect(
+        validateRepositoryConfig(archiveOnlyValues, workloadData).sobr
+          ?.performanceVaultRetention,
+      ).toBe(
+        'Weekly GFS points would only remain on this Vault Performance Tier for 20 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold to at least 30 days, enable "Copy backups as soon as they are created" on Capacity Tier, or choose a non-Vault Performance Tier type.',
+      );
+    });
+
+    it("does not fire when fed directly to Archive Tier (no Capacity Tier) and Archive's move threshold is at least 30 days", () => {
+      const archiveOnlyValues: RepositoryConfigValues = {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        backupPath: "direct",
+        targetRepository: "sobr",
+        sobr: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+          performanceType: "vault-azure",
+          performanceImmutableDays: "30",
+          capacityTier: {
+            enabled: false,
+            type: "s3-compatible",
+            copyPolicy: false,
+            movePolicy: false,
+            moveDays: "",
+            immutableDays: "",
+          },
+          archiveTier: {
+            enabled: true,
+            moveDays: "30",
+            immutableDays: "365",
+            standaloneFullBackups: false,
+          },
+        },
+      };
+      const workloadData: WorkloadDataValues = {
+        ...DEFAULT_WORKLOAD_DATA_VALUES,
+        shortTermRetentionDays: "30",
+        gfsWeekly: "4",
+        gfsMonthly: "0",
+        gfsYearly: "0",
+      };
+      expect(
+        validateRepositoryConfig(archiveOnlyValues, workloadData).sobr
+          ?.performanceVaultRetention,
       ).toBeUndefined();
     });
   });
