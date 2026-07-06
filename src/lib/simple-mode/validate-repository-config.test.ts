@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { validateRepositoryConfig } from "./validate-repository-config";
 import {
   DEFAULT_WORKLOAD_DATA_VALUES,
+  DEFAULT_REPOSITORY_CONFIG_VALUES,
   type RepositoryConfigValues,
+  type WorkloadDataValues,
 } from "@/types/simple-mode";
 
 // A fully valid, fully-enabled configuration: Backup Copy mode, SOBR target,
@@ -604,6 +606,309 @@ describe("validateRepositoryConfig", () => {
       ).toBe(
         "Google Cloud Capacity Tier can't send data to Archive Tier. Change the Capacity Tier repository type.",
       );
+    });
+  });
+});
+
+describe("Vault minimum retention", () => {
+  it("app defaults produce no vault-retention violation", () => {
+    const errors = validateRepositoryConfig(
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+      DEFAULT_WORKLOAD_DATA_VALUES,
+    );
+    expect(errors.targetRepositoryVaultRetention).toBeUndefined();
+    expect(errors.sobr?.performanceVaultRetention).toBeUndefined();
+    expect(errors.sobr?.capacityTier?.vaultRetention).toBeUndefined();
+  });
+
+  describe("turnkey target", () => {
+    const values: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "direct",
+      targetRepository: "vault-azure",
+      targetRepositoryImmutableDays: "30",
+    };
+    const lowRetentionWorkloadData: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      shortTermRetentionDays: "10",
+      gfsWeekly: "0",
+      gfsMonthly: "0",
+      gfsYearly: "0",
+    };
+
+    it("flags a Vault turnkey target whose retention is under 30 days", () => {
+      expect(
+        validateRepositoryConfig(values, lowRetentionWorkloadData)
+          .targetRepositoryVaultRetention,
+      ).toBe(
+        "Daily backups would only remain on this Vault Azure repository for 10 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase retention (or the relevant GFS count) to at least 30 days, or choose a non-Vault repository type.",
+      );
+    });
+
+    it("does not fire when retention is exactly 30 days", () => {
+      expect(
+        validateRepositoryConfig(values, {
+          ...lowRetentionWorkloadData,
+          shortTermRetentionDays: "30",
+        }).targetRepositoryVaultRetention,
+      ).toBeUndefined();
+    });
+  });
+
+  describe("Primary Repository (Backup Copy mode)", () => {
+    const baseValues: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      primary: {
+        repoType: "vault-aws",
+        immutableDays: "30",
+        retention: {
+          customizeRetention: true,
+          retentionDays: "10",
+          gfsWeekly: "0",
+          gfsMonthly: "0",
+          gfsYearly: "0",
+        },
+      },
+    };
+
+    it("flags a Vault Primary Repository whose retention is under 30 days", () => {
+      expect(
+        validateRepositoryConfig(baseValues, DEFAULT_WORKLOAD_DATA_VALUES)
+          .primary?.vaultRetention,
+      ).toBe(
+        "Daily backups would only remain on this Vault Primary Repository for 10 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase retention (or the relevant GFS count) to at least 30 days, or choose a non-Vault repository type.",
+      );
+    });
+
+    it("does not fire when retention is exactly 30 days", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...baseValues,
+            primary: {
+              ...baseValues.primary,
+              retention: {
+                ...baseValues.primary.retention,
+                retentionDays: "30",
+              },
+            },
+          },
+          DEFAULT_WORKLOAD_DATA_VALUES,
+        ).primary?.vaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("does not fire for a non-Vault Primary type regardless of retention", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...baseValues,
+            primary: { ...baseValues.primary, repoType: "refs-xfs" },
+          },
+          DEFAULT_WORKLOAD_DATA_VALUES,
+        ).primary?.vaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("skips the check when the override's own retention fields are already invalid", () => {
+      const errors = validateRepositoryConfig(
+        {
+          ...baseValues,
+          primary: {
+            ...baseValues.primary,
+            retention: {
+              ...baseValues.primary.retention,
+              retentionDays: "0",
+            },
+          },
+        },
+        DEFAULT_WORKLOAD_DATA_VALUES,
+      );
+      expect(errors.primary?.retention?.retentionDays).toBe(
+        "Must be 1 or greater",
+      );
+      expect(errors.primary?.vaultRetention).toBeUndefined();
+    });
+  });
+
+  describe("SOBR Performance Tier", () => {
+    const values: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "direct",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "vault-azure",
+        performanceImmutableDays: "30",
+        capacityTier: {
+          enabled: true,
+          type: "s3-compatible",
+          copyPolicy: false,
+          movePolicy: true,
+          moveDays: "14",
+          immutableDays: "30",
+        },
+      },
+    };
+    const workloadData: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      shortTermRetentionDays: "30",
+      gfsWeekly: "4",
+      gfsMonthly: "0",
+      gfsYearly: "0",
+    };
+
+    it("flags a Vault Performance Tier moved off to Capacity before 30 days", () => {
+      expect(
+        validateRepositoryConfig(values, workloadData).sobr
+          ?.performanceVaultRetention,
+      ).toBe(
+        'Daily backups would only remain on this Vault Performance Tier for 14 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold to at least 30 days, enable "Copy backups as soon as they are created" on Capacity Tier, or choose a non-Vault Performance Tier type.',
+      );
+    });
+
+    it("does not fire for a non-Vault Performance Tier type", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...values,
+            sobr: { ...values.sobr, performanceType: "refs-xfs" },
+          },
+          workloadData,
+        ).sobr?.performanceVaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("does not fire when Capacity Tier's move threshold is at least 30 days", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...values,
+            sobr: {
+              ...values.sobr,
+              capacityTier: { ...values.sobr.capacityTier, moveDays: "30" },
+            },
+          },
+          workloadData,
+        ).sobr?.performanceVaultRetention,
+      ).toBeUndefined();
+    });
+  });
+
+  describe("SOBR Capacity Tier", () => {
+    const values: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "direct",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "refs-xfs",
+        capacityTier: {
+          enabled: true,
+          type: "vault-azure",
+          copyPolicy: false,
+          movePolicy: true,
+          moveDays: "14",
+          immutableDays: "30",
+        },
+      },
+    };
+    const workloadData: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      shortTermRetentionDays: "30",
+      gfsWeekly: "4",
+      gfsMonthly: "0",
+      gfsYearly: "0",
+    };
+
+    it("flags a Vault Capacity Tier emptied by natural retention before 30 days (no Archive Tier)", () => {
+      expect(
+        validateRepositoryConfig(values, workloadData).sobr?.capacityTier
+          ?.vaultRetention,
+      ).toBe(
+        'Daily backups would only remain on this Vault Capacity Tier for 16 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.',
+      );
+    });
+
+    it("does not fire when Copy is enabled (data lands on Capacity from day 0)", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...values,
+            sobr: {
+              ...values.sobr,
+              capacityTier: { ...values.sobr.capacityTier, copyPolicy: true },
+            },
+          },
+          workloadData,
+        ).sobr?.capacityTier?.vaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("flags a Vault Capacity Tier whose Archive Tier move-out happens too early", () => {
+      const archiveValues: RepositoryConfigValues = {
+        ...values,
+        sobr: {
+          ...values.sobr,
+          capacityTier: {
+            ...values.sobr.capacityTier,
+            moveDays: "5",
+          },
+          archiveTier: {
+            enabled: true,
+            moveDays: "20",
+            immutableDays: "365",
+            standaloneFullBackups: false,
+          },
+        },
+      };
+      expect(
+        validateRepositoryConfig(archiveValues, {
+          ...workloadData,
+          shortTermRetentionDays: "40",
+        }).sobr?.capacityTier?.vaultRetention,
+      ).toBe(
+        'Weekly GFS points would only remain on this Vault Capacity Tier for 15 days before being removed — Veeam Data Cloud Vault requires backups to remain for at least 30 days. Increase the move threshold, increase retention, enable "Copy backups as soon as they are created," or choose a non-Vault Capacity Tier type.',
+      );
+    });
+
+    it("does not fire for an inert Capacity Tier (copyPolicy and movePolicy both off), regardless of retention", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...values,
+            sobr: {
+              ...values.sobr,
+              capacityTier: {
+                ...values.sobr.capacityTier,
+                copyPolicy: false,
+                movePolicy: false,
+                moveDays: "",
+              },
+            },
+          },
+          { ...workloadData, shortTermRetentionDays: "1" },
+        ).sobr?.capacityTier?.vaultRetention,
+      ).toBeUndefined();
+    });
+
+    it("does not fire for a non-Vault Capacity Tier type", () => {
+      expect(
+        validateRepositoryConfig(
+          {
+            ...values,
+            sobr: {
+              ...values.sobr,
+              capacityTier: {
+                ...values.sobr.capacityTier,
+                type: "s3-compatible",
+              },
+            },
+          },
+          { ...workloadData, shortTermRetentionDays: "1" },
+        ).sobr?.capacityTier?.vaultRetention,
+      ).toBeUndefined();
     });
   });
 });
