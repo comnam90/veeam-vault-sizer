@@ -230,6 +230,11 @@ export function SobrBuilder({ value, errors, onChange }: SobrBuilderProps) {
                 Remove
               </button>
             </div>
+            {errors?.archiveTier?.archiveFeedUnsupported ? (
+              <p className="text-destructive text-xs">
+                {errors.archiveTier.archiveFeedUnsupported}
+              </p>
+            ) : null}
             <div className="flex flex-row flex-wrap items-end gap-4">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">

@@ -157,4 +157,46 @@ describe("SobrBuilder", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
+
+  it("shows the archive-feed incompatibility message when present in errors", () => {
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          archiveTier: { ...defaultSobr.archiveTier, enabled: true },
+        }}
+        errors={{
+          archiveTier: {
+            archiveFeedUnsupported:
+              "Google Cloud doesn't support sending data directly to Archive Tier without a Capacity Tier in between. Add a Capacity Tier (with a non-Google-Cloud type), or change the Performance Tier repository type.",
+          },
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        /doesn't support sending data directly to archive tier/i,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the archive-feed incompatibility message when absent from errors", () => {
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          archiveTier: { ...defaultSobr.archiveTier, enabled: true },
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.queryByText(
+        /doesn't support sending data directly to archive tier/i,
+      ),
+    ).not.toBeInTheDocument();
+  });
 });
