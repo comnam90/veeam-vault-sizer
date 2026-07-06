@@ -86,6 +86,30 @@ export function repoTypeRequiresImmutability(type: RepoType): boolean {
   return REPO_TYPES_REQUIRING_IMMUTABILITY.has(type);
 }
 
+// Google Cloud is the only repo type VBR disallows from feeding Archive Tier
+// — whether it's the Performance Tier type (no Capacity Tier in between) or
+// the Capacity Tier type itself. VBR draws no distinction between those two
+// paths; this set applies to whichever type is immediately upstream.
+export const REPO_TYPES_CANNOT_FEED_ARCHIVE_TIER = new Set<RepoType>([
+  "google-cloud",
+]);
+
+export function repoTypeCanFeedArchiveTier(type: RepoType): boolean {
+  return !REPO_TYPES_CANNOT_FEED_ARCHIVE_TIER.has(type);
+}
+
+// Object-storage-only immutability batching window (Block Generation).
+// Block/File types are absent — they enforce immutability natively, no
+// Block Generation concept applies.
+export const BLOCK_GENERATION_DAYS: Partial<Record<RepoType, number>> = {
+  "vault-azure": 10,
+  "vault-aws": 10,
+  "azure-blob": 10,
+  "s3-compatible": 10,
+  "aws-s3": 30,
+  "google-cloud": 30,
+};
+
 // Primary and Performance Tier allow the full set: Vault-to-Vault copy jobs
 // and Direct-to-Object primary architectures are both real scenarios.
 export const ALL_REPO_TYPES: RepoType[] = [
@@ -174,7 +198,11 @@ export interface RepositoryConfigErrors {
   sobr?: {
     performanceImmutableDays?: string;
     capacityTier?: { moveDays?: string; immutableDays?: string };
-    archiveTier?: { moveDays?: string; immutableDays?: string };
+    archiveTier?: {
+      moveDays?: string;
+      immutableDays?: string;
+      archiveFeedUnsupported?: string;
+    };
   };
   secondaryRetention?: RetentionOverrideErrors;
 }
