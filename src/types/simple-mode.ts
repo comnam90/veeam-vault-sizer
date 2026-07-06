@@ -220,14 +220,14 @@ export const DEFAULT_REPOSITORY_CONFIG_VALUES: RepositoryConfigValues = {
   targetRepository: "vault-azure",
   targetRepositoryImmutableDays: "30",
   sobr: {
-    performanceType: "refs-xfs",
+    performanceType: "vault-azure",
     performanceImmutableDays: "30",
     capacityTier: {
-      enabled: true,
-      type: "s3-compatible",
-      copyPolicy: false,
+      enabled: false,
+      type: "vault-azure",
+      copyPolicy: true,
       movePolicy: true,
-      moveDays: "14",
+      moveDays: "30",
       immutableDays: "30",
     },
     archiveTier: {

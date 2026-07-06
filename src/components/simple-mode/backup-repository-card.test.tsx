@@ -85,6 +85,23 @@ describe("BackupRepositoryCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("defaults SOBR Builder's Performance Tier to Vault Azure with no Capacity or Archive Tier added", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
+
+    await user.click(screen.getByRole("button", { name: "SOBR Builder" }));
+
+    expect(
+      screen.getByRole("button", { name: "Vault Azure", pressed: true }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add capacity tier/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /add archive tier/i }),
+    ).toBeInTheDocument();
+  });
+
   it("shows the target immutability field for a turnkey Vault choice (the default) and hides it for SOBR", async () => {
     const user = userEvent.setup();
     render(<Harness initial={DEFAULT_REPOSITORY_CONFIG_VALUES} />);
@@ -99,7 +116,14 @@ describe("BackupRepositoryCard", () => {
       screen.queryByLabelText(/target repository immutability period/i),
     ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Vault Azure" }));
+    const targetRepositoryGroup = screen.getByRole("group", {
+      name: /select target repository/i,
+    });
+    await user.click(
+      within(targetRepositoryGroup).getByRole("button", {
+        name: "Vault Azure",
+      }),
+    );
 
     expect(
       screen.getByLabelText(/target repository immutability period/i),

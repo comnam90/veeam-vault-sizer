@@ -12,7 +12,12 @@ const defaultSobr = DEFAULT_REPOSITORY_CONFIG_VALUES.sobr;
 
 describe("SobrBuilder", () => {
   it("hides the Performance Tier immutability field when the type does not require it", () => {
-    render(<SobrBuilder value={defaultSobr} onChange={vi.fn()} />);
+    render(
+      <SobrBuilder
+        value={{ ...defaultSobr, performanceType: "refs-xfs" }}
+        onChange={vi.fn()}
+      />,
+    );
 
     expect(
       screen.queryByLabelText(/performance tier immutability period/i),
@@ -33,7 +38,15 @@ describe("SobrBuilder", () => {
   });
 
   it("always shows the Capacity Tier immutability field when enabled, regardless of type", () => {
-    render(<SobrBuilder value={defaultSobr} onChange={vi.fn()} />);
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          capacityTier: { ...defaultSobr.capacityTier, enabled: true },
+        }}
+        onChange={vi.fn()}
+      />,
+    );
 
     expect(
       screen.getByLabelText(/capacity tier immutability period/i),
@@ -61,7 +74,19 @@ describe("SobrBuilder", () => {
   it("toggles Copy and Move policies independently", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
-    render(<SobrBuilder value={defaultSobr} onChange={handleChange} />);
+    render(
+      <SobrBuilder
+        value={{
+          ...defaultSobr,
+          capacityTier: {
+            ...defaultSobr.capacityTier,
+            enabled: true,
+            copyPolicy: false,
+          },
+        }}
+        onChange={handleChange}
+      />,
+    );
 
     await user.click(
       screen.getByLabelText(/copy backups as soon as they are created/i),
@@ -140,6 +165,9 @@ describe("SobrBuilder", () => {
       return <SobrBuilder value={value} onChange={setValue} />;
     }
     render(<Harness />);
+    await user.click(
+      screen.getByRole("button", { name: /add capacity tier/i }),
+    );
     await user.click(screen.getByRole("button", { name: /add archive tier/i }));
 
     expect(
