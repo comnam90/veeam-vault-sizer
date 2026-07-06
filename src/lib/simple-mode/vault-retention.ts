@@ -110,7 +110,10 @@ export function findVaultResidencyViolation(
   for (const lifetime of lifetimes) {
     if (lifetime.lifetimeDays <= entryDays) continue;
 
-    const residencyDays = exitFor(lifetime) - entryDays;
+    const exitDays = exitFor(lifetime);
+    if (exitDays <= entryDays) continue;
+
+    const residencyDays = exitDays - entryDays;
     if (residencyDays >= VAULT_MINIMUM_RETENTION_DAYS) continue;
 
     if (!binding || residencyDays < binding.residencyDays) {

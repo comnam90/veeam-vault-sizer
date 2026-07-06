@@ -215,4 +215,13 @@ describe("findVaultResidencyViolation", () => {
       residencyDays: 15,
     });
   });
+
+  it("treats a class whose exit falls at or before entry as never residing on the tier, not a negative-residency violation", () => {
+    const lifetimes: ClassLifetime[] = [{ class: "weekly", lifetimeDays: 56 }];
+    // e.g. a downstream Archive Tier move threshold (20) set below this
+    // tier's own entry day (50) — an independently invalid configuration
+    // that shouldn't also manifest as a residency of -30 days here.
+    const exitFor = () => 20;
+    expect(findVaultResidencyViolation(lifetimes, 50, exitFor)).toBeUndefined();
+  });
 });
