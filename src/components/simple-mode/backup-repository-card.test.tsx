@@ -146,4 +146,31 @@ describe("BackupRepositoryCard", () => {
     ).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByText("Must be 1 or greater")).toBeInTheDocument();
   });
+
+  it("shows the target vault-retention message when the turnkey target's retention is under 30 days", () => {
+    function LowRetentionHarness() {
+      const [value, setValue] = useState<RepositoryConfigValues>({
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        targetRepository: "vault-azure",
+      });
+      return (
+        <BackupRepositoryCard
+          value={value}
+          workloadData={{
+            ...DEFAULT_WORKLOAD_DATA_VALUES,
+            shortTermRetentionDays: "10",
+            gfsWeekly: "0",
+            gfsMonthly: "0",
+            gfsYearly: "0",
+          }}
+          onChange={setValue}
+        />
+      );
+    }
+    render(<LowRetentionHarness />);
+
+    expect(
+      screen.getByText(/would only remain on this vault azure repository/i),
+    ).toBeInTheDocument();
+  });
 });

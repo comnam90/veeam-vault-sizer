@@ -60,7 +60,7 @@ export function BackupRepositoryCard({
   workloadData,
   onChange,
 }: BackupRepositoryCardProps) {
-  const errors = validateRepositoryConfig(value);
+  const errors = validateRepositoryConfig(value, workloadData);
   const backupPathGroupId = useId();
   const targetRepoGroupId = useId();
   const primaryImmutableId = useId();
@@ -122,6 +122,11 @@ export function BackupRepositoryCard({
           {errors.targetRepositoryImmutableDays ? (
             <p className="text-destructive text-xs">
               {errors.targetRepositoryImmutableDays}
+            </p>
+          ) : null}
+          {errors.targetRepositoryVaultRetention ? (
+            <p className="text-destructive text-xs">
+              {errors.targetRepositoryVaultRetention}
             </p>
           ) : null}
         </div>
@@ -210,6 +215,11 @@ export function BackupRepositoryCard({
                   </p>
                 ) : null}
               </div>
+            ) : null}
+            {errors.primary?.vaultRetention ? (
+              <p className="text-destructive text-xs">
+                {errors.primary.vaultRetention}
+              </p>
             ) : null}
             <RetentionOverrideBlock
               context="Primary"
