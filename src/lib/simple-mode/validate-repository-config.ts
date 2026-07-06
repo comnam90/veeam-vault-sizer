@@ -4,7 +4,11 @@ import type {
   RetentionOverride,
   RetentionOverrideErrors,
 } from "@/types/simple-mode";
-import { repoTypeRequiresImmutability } from "@/types/simple-mode";
+import {
+  REPO_TYPE_LABEL,
+  repoTypeCanFeedArchiveTier,
+  repoTypeRequiresImmutability,
+} from "@/types/simple-mode";
 
 interface NumberRules {
   integer?: boolean;
@@ -125,7 +129,11 @@ export function validateRepositoryConfig(
     }
 
     if (archiveTier.enabled) {
-      const archiveErrors: { moveDays?: string; immutableDays?: string } = {};
+      const archiveErrors: {
+        moveDays?: string;
+        immutableDays?: string;
+        archiveFeedUnsupported?: string;
+      } = {};
 
       const moveDaysError = requireNumber(archiveTier.moveDays, {
         integer: true,
@@ -148,6 +156,21 @@ export function validateRepositoryConfig(
         min: 1,
       });
       if (immutableError) archiveErrors.immutableDays = immutableError;
+
+      const archiveSourceType = capacityTier.enabled
+        ? capacityTier.type
+        : values.sobr.performanceType;
+
+      if (!repoTypeCanFeedArchiveTier(archiveSourceType)) {
+        const sourceLabel = REPO_TYPE_LABEL[archiveSourceType];
+        archiveErrors.archiveFeedUnsupported = capacityTier.enabled
+          ? `${sourceLabel} Capacity Tier can't send data to Archive Tier. ` +
+            `Change the Capacity Tier repository type.`
+          : `${sourceLabel} doesn't support sending data directly to Archive ` +
+            `Tier without a Capacity Tier in between. Add a Capacity Tier ` +
+            `(with a non-Google-Cloud type), or change the Performance Tier ` +
+            `repository type.`;
+      }
 
       if (Object.keys(archiveErrors).length > 0) {
         sobrErrors.archiveTier = archiveErrors;

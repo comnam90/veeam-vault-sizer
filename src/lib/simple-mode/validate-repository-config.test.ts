@@ -443,5 +443,57 @@ describe("validateRepositoryConfig", () => {
         }).sobr?.archiveTier?.immutableDays,
       ).toBe("Required");
     });
+
+    it("requires the Performance Tier type to support feeding Archive Tier when Capacity Tier is disabled", () => {
+      expect(
+        validateRepositoryConfig({
+          ...validSobrValues,
+          sobr: {
+            ...validSobrValues.sobr,
+            performanceType: "google-cloud",
+            capacityTier: {
+              ...validSobrValues.sobr.capacityTier,
+              enabled: false,
+            },
+          },
+        }).sobr?.archiveTier?.archiveFeedUnsupported,
+      ).toBe(
+        "Google Cloud doesn't support sending data directly to Archive Tier without a Capacity Tier in between. Add a Capacity Tier (with a non-Google-Cloud type), or change the Performance Tier repository type.",
+      );
+    });
+
+    it("ignores Performance Tier's type once Capacity Tier is the tier feeding Archive Tier", () => {
+      // Performance is Google Cloud, but Capacity Tier (s3-compatible, from
+      // validSobrValues) is enabled and sits between Performance and Archive,
+      // so Performance's type is irrelevant here. This is not "Google Cloud
+      // is always fine once Capacity Tier exists" — it passes only because
+      // the *Capacity Tier's* type supports feeding Archive Tier.
+      expect(
+        validateRepositoryConfig({
+          ...validSobrValues,
+          sobr: {
+            ...validSobrValues.sobr,
+            performanceType: "google-cloud",
+          },
+        }).sobr?.archiveTier?.archiveFeedUnsupported,
+      ).toBeUndefined();
+    });
+
+    it("requires the Capacity Tier type to support feeding Archive Tier when Capacity Tier is enabled", () => {
+      expect(
+        validateRepositoryConfig({
+          ...validSobrValues,
+          sobr: {
+            ...validSobrValues.sobr,
+            capacityTier: {
+              ...validSobrValues.sobr.capacityTier,
+              type: "google-cloud",
+            },
+          },
+        }).sobr?.archiveTier?.archiveFeedUnsupported,
+      ).toBe(
+        "Google Cloud Capacity Tier can't send data to Archive Tier. Change the Capacity Tier repository type.",
+      );
+    });
   });
 });
