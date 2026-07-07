@@ -1,98 +1,98 @@
 ---
 name: Obsidian Precision
 colors:
-  surface: '#131313'
-  surface-dim: '#131313'
-  surface-bright: '#393939'
-  surface-container-lowest: '#0e0e0e'
-  surface-container-low: '#1c1b1b'
-  surface-container: '#201f1f'
-  surface-container-high: '#2a2a2a'
-  surface-container-highest: '#353534'
-  on-surface: '#e5e2e1'
-  on-surface-variant: '#bbcbba'
-  inverse-surface: '#e5e2e1'
-  inverse-on-surface: '#313030'
-  outline: '#859585'
-  outline-variant: '#3c4a3d'
-  surface-tint: '#30e378'
-  primary: '#42ee82'
-  on-primary: '#003918'
-  primary-container: '#00d169'
-  on-primary-container: '#005326'
-  inverse-primary: '#007f49'
-  secondary: '#9ecaff'
-  on-secondary: '#003258'
-  secondary-container: '#1e95f2'
-  on-secondary-container: '#002b4d'
-  tertiary: '#ffc4af'
-  on-tertiary: '#591c01'
-  tertiary-container: '#ff9d76'
-  on-tertiary-container: '#783214'
-  error: '#ffb4ab'
-  on-error: '#690005'
-  error-container: '#93000a'
-  on-error-container: '#ffdad6'
-  primary-fixed: '#63ff95'
-  primary-fixed-dim: '#30e378'
-  on-primary-fixed: '#00210b'
-  on-primary-fixed-variant: '#005225'
-  secondary-fixed: '#d1e4ff'
-  secondary-fixed-dim: '#9ecaff'
-  on-secondary-fixed: '#001d36'
-  on-secondary-fixed-variant: '#00497d'
-  tertiary-fixed: '#ffdbce'
-  tertiary-fixed-dim: '#ffb599'
-  on-tertiary-fixed: '#370e00'
-  on-tertiary-fixed-variant: '#773213'
-  background: '#131313'
-  on-background: '#e5e2e1'
-  surface-variant: '#353534'
-  tier-performance: '#42ee82'
-  tier-capacity: '#9ecaff'
-  tier-archive: '#859585'
+  surface: "#131313"
+  surface-dim: "#131313"
+  surface-bright: "#393939"
+  surface-container-lowest: "#0e0e0e"
+  surface-container-low: "#1c1b1b"
+  surface-container: "#201f1f"
+  surface-container-high: "#2a2a2a"
+  surface-container-highest: "#353534"
+  on-surface: "#e5e2e1"
+  on-surface-variant: "#bbcbba"
+  inverse-surface: "#e5e2e1"
+  inverse-on-surface: "#313030"
+  outline: "#859585"
+  outline-variant: "#3c4a3d"
+  surface-tint: "#30e378"
+  primary: "#42ee82"
+  on-primary: "#003918"
+  primary-container: "#00d169"
+  on-primary-container: "#005326"
+  inverse-primary: "#007f49"
+  secondary: "#9ecaff"
+  on-secondary: "#003258"
+  secondary-container: "#1e95f2"
+  on-secondary-container: "#002b4d"
+  tertiary: "#ffc4af"
+  on-tertiary: "#591c01"
+  tertiary-container: "#ff9d76"
+  on-tertiary-container: "#783214"
+  error: "#ffb4ab"
+  on-error: "#690005"
+  error-container: "#93000a"
+  on-error-container: "#ffdad6"
+  primary-fixed: "#63ff95"
+  primary-fixed-dim: "#30e378"
+  on-primary-fixed: "#00210b"
+  on-primary-fixed-variant: "#005225"
+  secondary-fixed: "#d1e4ff"
+  secondary-fixed-dim: "#9ecaff"
+  on-secondary-fixed: "#001d36"
+  on-secondary-fixed-variant: "#00497d"
+  tertiary-fixed: "#ffdbce"
+  tertiary-fixed-dim: "#ffb599"
+  on-tertiary-fixed: "#370e00"
+  on-tertiary-fixed-variant: "#773213"
+  background: "#131313"
+  on-background: "#e5e2e1"
+  surface-variant: "#353534"
+  tier-performance: "#42ee82"
+  tier-capacity: "#9ecaff"
+  tier-archive: "#859585"
 typography:
   headline-lg:
     fontFamily: Inter
     fontSize: 32px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 40px
     letterSpacing: -0.02em
   headline-lg-mobile:
     fontFamily: Inter
     fontSize: 24px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 32px
   headline-md:
     fontFamily: Inter
     fontSize: 20px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 28px
   body-lg:
     fontFamily: Inter
     fontSize: 16px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 24px
   body-md:
     fontFamily: Inter
     fontSize: 14px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 20px
   body-sm:
     fontFamily: Inter
     fontSize: 13px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 18px
   label-bold:
     fontFamily: Inter
     fontSize: 12px
-    fontWeight: '600'
+    fontWeight: "600"
     lineHeight: 16px
     letterSpacing: 0.05em
   mono-data:
     fontFamily: JetBrains Mono
     fontSize: 13px
-    fontWeight: '400'
+    fontWeight: "400"
     lineHeight: 18px
 rounded:
   sm: 0.125rem
@@ -164,16 +164,25 @@ The shape language is "Soft" and professional. A standard radius of 4px (`0.25re
 ## Components
 
 ### Buttons
+
 Primary buttons use the vibrancy of the Primary Green with black text for maximum punch. Ghost buttons use the `outline` color for borders and `on-surface` for text, providing a clear hierarchy for secondary actions.
 
 ### Cards
+
 Cards are built using `surface-container-low` to pop against the `surface` background. They do not use shadows by default, relying instead on the 1px `outline` for definition.
 
 ### Input Fields
+
 Inputs use `surface-dim` for the field background with a subtle `outline` border. On focus, the border transitions to Primary Green. Helper text and labels follow the `on-surface-variant` color.
 
+### Toggle Switches & Checkboxes
+
+Toggle Switches are for real, domain-relevant boolean settings (mode switching, tier policies) — track uses `outline` when off, Primary Green when active. Checkboxes are reserved for pure UI-disclosure toggles that only reveal or hide other fields (see ADR-0010).
+
 ### Chips & Lists
+
 Chips utilize `surface-container-high` for a tactile feel. Lists use a subtle `surface-bright` highlight on hover to provide clear interactive feedback.
 
 ### Status Indicators
+
 Given the monitoring focus, status indicators (Error, Warning, Success) must be high-contrast. Use semantic colors that are adjusted for the dark background to ensure they remain accessible and distinctive.
