@@ -1,3 +1,15 @@
+import { buildVmAgentRequest } from "../../src/lib/simple-mode/build-vm-agent-request";
+import type {
+  SizerBffRequest,
+  SizerBffResponse,
+} from "../../src/types/simple-mode";
+import type {
+  CVmAgentReturnObject,
+  ReturnMessage,
+  ValidationProblemDetails,
+  VmAgentInputs,
+} from "../../src/types/vault-sizer-api";
+
 const VAULT_SIZER_API_URL = "https://calculator.veeam.com/vse/api/VmAgent";
 
 const CORS_HEADERS = {
@@ -6,11 +18,25 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(body: SizerBffResponse, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
+}
+
+function extractErrorMessage(body: unknown): string {
+  const returnMessage = body as ReturnMessage | null;
+  if (returnMessage?.messages && returnMessage.messages.length > 0) {
+    return returnMessage.messages[0];
+  }
+
+  const validationProblem = body as ValidationProblemDetails | null;
+  if (validationProblem?.errors) {
+    return Object.values(validationProblem.errors).flat().join(", ");
+  }
+
+  return "Calculation engine rejected the request";
 }
 
 export async function onRequestOptions(): Promise<Response> {
@@ -20,24 +46,46 @@ export async function onRequestOptions(): Promise<Response> {
 export async function onRequestPost(context: {
   request: Request;
 }): Promise<Response> {
-  let body: unknown;
+  let bffRequest: SizerBffRequest;
   try {
-    body = await context.request.json();
+    bffRequest = await context.request.json();
   } catch {
-    return jsonResponse({ error: "Invalid JSON body" }, 400);
+    return jsonResponse({ success: false, error: "Invalid JSON body" }, 400);
+  }
+
+  let vmAgentInputs: VmAgentInputs;
+  try {
+    vmAgentInputs = buildVmAgentRequest(
+      bffRequest.workloadData,
+      bffRequest.repositoryConfig,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid request";
+    return jsonResponse({ success: false, error: message }, 400);
   }
 
   try {
     const upstream = await fetch(VAULT_SIZER_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(vmAgentInputs),
     });
 
-    const data: unknown = await upstream.json();
+    const upstreamBody: unknown = await upstream.json();
 
-    return jsonResponse(data, upstream.ok ? 200 : upstream.status);
+    if (upstream.ok) {
+      const { data } = upstreamBody as { data: CVmAgentReturnObject };
+      return jsonResponse({ success: true, data }, 200);
+    }
+
+    return jsonResponse(
+      { success: false, error: extractErrorMessage(upstreamBody) },
+      upstream.status,
+    );
   } catch {
-    return jsonResponse({ error: "Upstream sizing API unreachable" }, 502);
+    return jsonResponse(
+      { success: false, error: "Upstream sizing API unreachable" },
+      502,
+    );
   }
 }
