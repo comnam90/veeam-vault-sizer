@@ -263,8 +263,8 @@ Throws immediately if `repositoryConfig.backupPath === "copy"`, with a message p
 
 `onRequestPost` now:
 
-1. Parses the body as `SizerBffRequest`.
-2. Calls `buildVmAgentRequest(workloadData, repositoryConfig)`. A thrown error (invalid JSON, or the Backup Copy guard) returns `{ success: false, error: <message> }` at 400.
+1. Parses the body as `SizerBffRequest`. Invalid JSON returns `{ success: false, error: "Invalid JSON body" }` at 400.
+2. Calls `buildVmAgentRequest(workloadData, repositoryConfig)`. A thrown error (the Backup Copy guard) returns `{ success: false, error: <message> }` at 400, before any upstream call is made.
 3. POSTs the resulting `VmAgentInputs` to `https://calculator.veeam.com/vse/api/VmAgent`.
 4. On a 200, returns `{ success: true, data: body.data }`.
 5. On a 400, reads the body once and extracts a message from whichever shape came back — `ReturnMessage.messages[0]` or `Object.values(ValidationProblemDetails.errors).flat().join(", ")` — falling back to a generic message if neither matches. Returns `{ success: false, error: <message> }` at 400.
