@@ -104,6 +104,20 @@ describe("buildVmAgentRequest", () => {
     expect(result.blockGenerationDays).toBe(0);
   });
 
+  it("resolves Block Generation from Performance Tier's type when Capacity Tier is disabled", () => {
+    const values: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+    };
+
+    const result = buildVmAgentRequest(DEFAULT_WORKLOAD_DATA_VALUES, values);
+
+    // Default SOBR performanceType is vault-azure (immutable, Capacity Tier
+    // disabled), so the else-if branch's BLOCK_GENERATION_DAYS lookup must
+    // hit an actual table entry here, not just fall through to `?? 0`.
+    expect(result.blockGenerationDays).toBe(10);
+  });
+
   it("maps an enabled Capacity Tier, and Capacity Tier's type wins Block Generation over Performance Tier's", () => {
     const values: RepositoryConfigValues = {
       ...DEFAULT_REPOSITORY_CONFIG_VALUES,
