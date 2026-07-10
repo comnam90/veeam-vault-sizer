@@ -110,16 +110,16 @@ export interface IndexingReturnObject {
   emServerSpaceGB: number;
 }
 
-export interface MonthTransactionData {
+export interface ObjectTransactions {
   firstMonthTransactions: number;
   secondMonthTransactions: number;
   finalMonthTransactions: number;
 }
 
 export interface TotalObjectTransactions {
-  performanceTierTransactions?: MonthTransactionData | null;
-  capacityTierTransactions?: MonthTransactionData | null;
-  archiveTierTransactions?: MonthTransactionData | null;
+  performanceTierTransactions?: ObjectTransactions | null;
+  capacityTierTransactions?: ObjectTransactions | null;
+  archiveTierTransactions?: ObjectTransactions | null;
 }
 
 export interface CRpsPoints {
