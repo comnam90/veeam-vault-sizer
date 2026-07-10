@@ -106,6 +106,26 @@ describe("onRequestPost", () => {
     });
   });
 
+  it("falls back to a generic message when the 400 body matches neither documented shape", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({}), { status: 400 }),
+    );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      success: false,
+      error: "Calculation engine rejected the request",
+    });
+  });
+
   it("returns 502 when the upstream API is unreachable", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("network error"));
 
