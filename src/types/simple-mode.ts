@@ -1,3 +1,5 @@
+import type { CVmAgentReturnObject } from "./vault-sizer-api";
+
 export interface WorkloadDataValues {
   sourceSizeTB: string;
   dailyChangeRatePercent: string;
@@ -255,3 +257,12 @@ export const DEFAULT_REPOSITORY_CONFIG_VALUES: RepositoryConfigValues = {
   },
   secondaryRetention: { ...DEFAULT_RETENTION_OVERRIDE },
 };
+
+export interface SizerBffRequest {
+  workloadData: WorkloadDataValues;
+  repositoryConfig: RepositoryConfigValues;
+}
+
+export type SizerBffResponse =
+  | { success: true; data: CVmAgentReturnObject }
+  | { success: false; error: string };

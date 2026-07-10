@@ -1,113 +1,160 @@
-export interface GfsPolicy {
-  isDefined: boolean;
-  weeks: number;
-  months: number;
-  years: number;
+export type ProductVersion = 0 | -1; // 0 = Current (v13), -1 = Previous (v12)
+export type CalculatorMode = 0 | 1; // 0 = Simple, 1 = Advanced
+export type HyperVisor = 0 | 1 | 2 | 3 | 4; // 0=VMware 1=HyperV 2=Nutanix 3=ProxMox 4=Other
+export type BackupOptions = 0 | 1; // 0 = Backup, 1 = Copy
+
+export interface IndexingInputObject {
+  enabled: boolean;
+  guestSourceFilesMil?: number;
+  emIndexRetentionMonths?: number;
+  emInstalledOnBackupServer?: boolean;
+  retentionPointsSumOfRegularAndGfs?: number; // inert for VmAgent; modeled for completeness
 }
 
-export interface RetentionPolicy {
-  days: number;
-  gfs: GfsPolicy;
-  isGfsDefined: boolean;
+export interface VmAgentInputs {
+  productVersion?: ProductVersion;
+  calculatorMode?: CalculatorMode;
+  hyperVisor?: HyperVisor;
+  backupType?: BackupOptions;
+
+  sourceTB?: number;
+  changeRate?: number;
+  reduction?: number;
+  days?: number;
+  blockCloning?: boolean;
+  backupWindowHours?: number;
+  largeBlock?: boolean;
+
+  weeklies?: number;
+  monthlies?: number;
+  yearlies?: number;
+
+  growthRatePercent?: number;
+  growthRateScopeYears?: number;
+  growthFactor?: number;
+  projectLength?: number;
+
+  objectStorage?: boolean;
+  storageType?: "object" | null;
+  moveCapacityTierEnabled?: boolean;
+  copyCapacityTierEnabled?: boolean;
+  capacityTierDays?: number;
+
+  immutablePerf?: boolean;
+  immutablePerfDays?: number;
+  immutableCap?: boolean;
+  immutableCapDays?: number;
+  blockGenerationDays?: number;
+
+  archiveTierEnabled?: boolean;
+  archiveTierDays?: number;
+  archiveTierStandalone?: boolean;
+
+  copiesEnabled?: boolean;
+  showPoints?: boolean;
+  preferPhysicalProxySizing?: boolean;
+  enableEntropyScanning?: boolean;
+  indexOptions?: IndexingInputObject | null;
+
+  // Label-only fields — never populated by buildVmAgentRequest, modeled for fidelity:
+  siteId?: string | null;
+  siteName?: string | null;
+  id?: string | null;
+  name?: string | null;
+  workloadName?: string | null;
+  workloadId?: string | null;
+  repoId?: string | null;
+  repoName?: string | null;
+  capTierRepoId?: string | null;
+  archiveTierRepoId?: string | null;
 }
 
-export interface VmAgentRequest {
-  sourceTB: number;
-  ChangeRate: number;
-  Reduction: number;
-  backupWindowHours: number;
-  GrowthRatePercent: number;
-  GrowthRateScopeYears: number;
-  blockGenerationDays: number;
-  retention: RetentionPolicy;
-  days: number;
-  Weeklies: number;
-  Monthlies: number;
-  Yearlies: number;
-  Blockcloning: boolean;
-  ObjectStorage: boolean;
-  moveCapacityTierEnabled: boolean;
-  capacityTierDays: number;
-  copyCapacityTierEnabled: boolean;
-  immutablePerf: boolean;
-  immutablePerfDays: number;
-  immutableCap: boolean;
-  immutableCapDays: number;
-  archiveTierEnabled: boolean;
-  archiveTierStandalone: boolean;
-  archiveTierDays: number;
-  isCapTierVDCV: boolean;
-  isManaged: boolean;
-  machineType: number;
-  hyperVisor: number;
-  calculatorMode: number;
-  productVersion: number;
-  instanceCount: number;
+export interface Throughput {
+  inboundMBps: number;
+  outboundMBps: number;
 }
 
-export interface ComputeVolume {
+export interface Location {
+  siteId?: string | null;
+  siteName?: string | null;
+}
+
+export interface Volume {
   diskGB: number;
-  diskPurpose: number; // 3=perf, 13=capacity/cache, 4=logs
+  diskPurpose: number; // DiskType enum — see comment below
+  throughputMbps?: Throughput | null;
 }
 
-export interface ComputeSpec {
+// DiskType values relevant to repoCompute.volumes:
+// 3 = RepoObject (Performance Tier), 13 = RepoCapacityTier (Capacity Tier),
+// 4 = RepoArchive (Archive Tier). Other codes exist (OS, Cache, etc.) but
+// don't appear in this endpoint's practical output.
+
+export interface ComputeRequirement {
+  name?: string | null;
+  site?: Location | null;
   cores: number;
   ram: number;
-  volumes: ComputeVolume[];
+  volumes?: Volume[] | null;
+  networkThroughput?: Throughput | null;
 }
 
-export interface ComputeNode {
-  compute: ComputeSpec;
+export interface ProxyResult {
+  compute?: ComputeRequirement | null;
+  siteId?: string | null; // always empty for VmAgent
 }
 
-export interface MonthlyTransactions {
+export interface IndexingReturnObject {
+  compute?: ComputeRequirement | null;
+  vbrServerSpaceGB: number;
+  emServerSpaceGB: number;
+}
+
+export interface ObjectTransactions {
   firstMonthTransactions: number;
   secondMonthTransactions: number;
   finalMonthTransactions: number;
 }
 
-export interface TransactionCosts {
-  performanceTierTransactions?: MonthlyTransactions;
-  capacityTierTransactions?: MonthlyTransactions;
-  archiveTierTransactions?: MonthlyTransactions;
+export interface TotalObjectTransactions {
+  performanceTierTransactions?: ObjectTransactions | null;
+  capacityTierTransactions?: ObjectTransactions | null;
+  archiveTierTransactions?: ObjectTransactions | null;
 }
 
-export interface RestorePoint {
-  /** Observed: "performanceTier". Capacity/archive tier values may appear in future responses. */
-  pointType: string;
-  /** 1 = newest daily; higher = older. Yearly retention has been seen as high as 1099. */
+export interface CRpsPoints {
+  pointType: "performanceTier" | "capacityTier" | "archiveTier";
   day: number;
-  /** TB. The API returns this already-converted; do not divide by 1024. */
-  backupCapacity: number;
+  backupCapacity: number; // TB — already converted, do not divide by 1024
   isFull: boolean;
   isGFS: boolean;
   isImmutable: boolean;
-  /**
-   * Space-separated tier tokens. Each token starts with D|W|M|Y followed by an
-   * index, e.g. "D5", "W2", "M12", "Y3". Multi-tier points concatenate tokens
-   * with a space, e.g. "M12 Y1".
-   */
-  flags: string;
+  flags?: string | null;
 }
 
-export interface VmAgentResponseData {
-  totalStorageTB: number;
-  proxyCompute: ComputeNode;
-  repoCompute: ComputeNode;
-  transactions: TransactionCosts;
+export interface CVmAgentReturnObject {
+  siteId?: string | null;
+  siteName?: string | null;
+  id?: string | null;
+  name?: string | null;
+  totalStorageTB: number; // Performance Tier only — not a grand total across tiers
+  proxyCompute?: ProxyResult | null;
+  repoCompute?: ProxyResult | null;
+  indexResults?: IndexingReturnObject | null;
+  transactions?: TotalObjectTransactions | null;
+  workspaceGB: number;
   performanceTierImmutabilityTaxGB: number;
   capacityTierImmutabilityTaxGB: number;
-  restorePoints?: RestorePoint[];
-  /** Other fields the API returns; typed for completeness, not currently consumed. */
-  id?: number | string;
-  name?: string;
-  siteId?: number | string;
-  siteName?: string;
-  indexResults?: unknown;
-  workspaceGB?: number;
+  restorePoints?: CRpsPoints[] | null;
 }
 
-export interface VmAgentResponse {
-  success: boolean;
-  data: VmAgentResponseData;
+export interface ReturnMessage {
+  success: false;
+  messages?: string[] | null;
+}
+
+export interface ValidationProblemDetails {
+  title?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
 }
