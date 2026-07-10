@@ -1,55 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { callVaultSizerApi } from "./vault-sizer-client";
-import type { VmAgentRequest, VmAgentResponse } from "@/types/vault-sizer-api";
+import {
+  DEFAULT_REPOSITORY_CONFIG_VALUES,
+  DEFAULT_WORKLOAD_DATA_VALUES,
+} from "@/types/simple-mode";
+import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
-const minimalRequest: VmAgentRequest = {
-  sourceTB: 10,
-  ChangeRate: 3,
-  Reduction: 50,
-  backupWindowHours: 8,
-  GrowthRatePercent: 10,
-  GrowthRateScopeYears: 3,
-  blockGenerationDays: 10,
-  retention: {
-    days: 30,
-    gfs: { isDefined: true, weeks: 4, months: 12, years: 3 },
-    isGfsDefined: true,
-  },
-  days: 30,
-  Weeklies: 4,
-  Monthlies: 12,
-  Yearlies: 3,
-  Blockcloning: true,
-  ObjectStorage: true,
-  moveCapacityTierEnabled: false,
-  capacityTierDays: 14,
-  copyCapacityTierEnabled: false,
-  immutablePerf: true,
-  immutablePerfDays: 30,
-  immutableCap: true,
-  immutableCapDays: 30,
-  archiveTierEnabled: false,
-  archiveTierStandalone: false,
-  archiveTierDays: 90,
-  isCapTierVDCV: true,
-  isManaged: true,
-  machineType: 0,
-  hyperVisor: 0,
-  calculatorMode: 0,
-  productVersion: 0,
-  instanceCount: 1,
-};
-
-const mockResponse: VmAgentResponse = {
-  success: true,
-  data: {
-    totalStorageTB: 18.4,
-    proxyCompute: { compute: { cores: 4, ram: 8, volumes: [] } },
-    repoCompute: { compute: { cores: 8, ram: 16, volumes: [] } },
-    transactions: {},
-    performanceTierImmutabilityTaxGB: 0,
-    capacityTierImmutabilityTaxGB: 0,
-  },
+const mockData: CVmAgentReturnObject = {
+  totalStorageTB: 18.4,
+  workspaceGB: 0,
+  performanceTierImmutabilityTaxGB: 0,
+  capacityTierImmutabilityTaxGB: 0,
 };
 
 describe("callVaultSizerApi", () => {
@@ -61,28 +22,45 @@ describe("callVaultSizerApi", () => {
     vi.unstubAllGlobals();
   });
 
-  it("POSTs the request to /api/vault-sizer and returns the parsed response", async () => {
+  it("POSTs workloadData and repositoryConfig to /api/vault-sizer and returns the unwrapped data", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify({ success: true, data: mockData }), {
+        status: 200,
+      }),
     );
 
-    const result = await callVaultSizerApi(minimalRequest);
+    const result = await callVaultSizerApi(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+    );
 
     expect(fetch).toHaveBeenCalledWith("/api/vault-sizer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(minimalRequest),
+      body: JSON.stringify({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+      }),
     });
-    expect(result).toEqual(mockResponse);
+    expect(result).toEqual(mockData);
   });
 
-  it("throws a descriptive error when the response is not ok", async () => {
+  it("throws the gateway's error message when success is false", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(null, { status: 500, statusText: "Internal Server Error" }),
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: "sourceTB must be between 0 and 1,024,000",
+        }),
+        { status: 400 },
+      ),
     );
 
-    await expect(callVaultSizerApi(minimalRequest)).rejects.toThrow(
-      "Vault Sizer API error: 500 Internal Server Error",
-    );
+    await expect(
+      callVaultSizerApi(
+        DEFAULT_WORKLOAD_DATA_VALUES,
+        DEFAULT_REPOSITORY_CONFIG_VALUES,
+      ),
+    ).rejects.toThrow("sourceTB must be between 0 and 1,024,000");
   });
 });
