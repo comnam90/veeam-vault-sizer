@@ -51,6 +51,7 @@ const FIELD_RULES: { key: keyof WorkloadDataValues; rules: NumberRules }[] = [
   { key: "gfsWeekly", rules: { integer: true, min: 0 } },
   { key: "gfsMonthly", rules: { integer: true, min: 0 } },
   { key: "gfsYearly", rules: { integer: true, min: 0 } },
+  { key: "projectLengthYears", rules: { integer: true, min: 1, max: 100 } },
 ];
 
 export function validateWorkloadData(

@@ -11,6 +11,7 @@ const validValues: WorkloadDataValues = {
   gfsWeekly: "4",
   gfsMonthly: "12",
   gfsYearly: "3",
+  projectLengthYears: "1",
 };
 
 describe("validateWorkloadData", () => {
@@ -181,6 +182,47 @@ describe("validateWorkloadData", () => {
     it("rejects an empty value", () => {
       expect(
         validateWorkloadData({ ...validValues, gfsYearly: "" }).gfsYearly,
+      ).toBe("Required");
+    });
+  });
+
+  describe("projectLengthYears", () => {
+    it("accepts the boundary values 1 and 100", () => {
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "1" })
+          .projectLengthYears,
+      ).toBeUndefined();
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "100" })
+          .projectLengthYears,
+      ).toBeUndefined();
+    });
+
+    it("rejects 0 (the API's fall-back-to-growthRateScopeYears sentinel)", () => {
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "0" })
+          .projectLengthYears,
+      ).toBe("Must be between 1 and 100");
+    });
+
+    it("rejects a value above 100", () => {
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "101" })
+          .projectLengthYears,
+      ).toBe("Must be between 1 and 100");
+    });
+
+    it("rejects a non-integer value", () => {
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "2.5" })
+          .projectLengthYears,
+      ).toBe("Must be a whole number");
+    });
+
+    it("rejects an empty value", () => {
+      expect(
+        validateWorkloadData({ ...validValues, projectLengthYears: "" })
+          .projectLengthYears,
       ).toBe("Required");
     });
   });

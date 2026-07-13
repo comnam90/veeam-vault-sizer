@@ -9,6 +9,7 @@ export interface WorkloadDataValues {
   gfsWeekly: string;
   gfsMonthly: string;
   gfsYearly: string;
+  projectLengthYears: string;
 }
 
 export type WorkloadDataErrors = Partial<
@@ -24,6 +25,7 @@ export const DEFAULT_WORKLOAD_DATA_VALUES: WorkloadDataValues = {
   gfsWeekly: "4",
   gfsMonthly: "12",
   gfsYearly: "3",
+  projectLengthYears: "1",
 };
 
 export type RepoType =
