@@ -63,4 +63,24 @@ describe("callVaultSizerApi", () => {
       ),
     ).rejects.toThrow("sourceTB must be between 0 and 1,024,000");
   });
+
+  it("forwards an AbortSignal to fetch when provided", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ success: true, data: mockData }), {
+        status: 200,
+      }),
+    );
+    const controller = new AbortController();
+
+    await callVaultSizerApi(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+      controller.signal,
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/vault-sizer",
+      expect.objectContaining({ signal: controller.signal }),
+    );
+  });
 });
