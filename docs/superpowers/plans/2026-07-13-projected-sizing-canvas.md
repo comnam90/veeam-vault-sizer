@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-13-projected-sizing-canvas-design.md` — read it first; this plan implements it section by section. Relevant ADRs: 0016 (Forecast Horizon drives both horizon fields), 0017 (Strict Mode first-load delay accepted), 0018 (`growthFactor` mirrors `growthRatePercent`'s source).
 
-**Note on scope:** every code snippet in every task below has already been implemented and verified end-to-end in a throwaway prototype (all 191 new/changed tests passing, clean `tsc --noEmit`, clean `eslint .`, clean `npm run build`) before this plan was written, then reverted so this branch stays plan-only. Follow the steps as written — they are not speculative.
+**Note on scope:** every code snippet in every task below has already been implemented and verified end-to-end in a throwaway prototype (baseline 164 tests / 16 files → 196 tests / 21 files after all ten tasks, all passing, clean `tsc --noEmit`, clean `eslint .`, clean `npm run build`) before this plan was written, then reverted so this branch stays plan-only. Follow the steps as written — they are not speculative. Per-task test counts below were re-verified individually against a real `vitest run` — trust the command's actual output over any number in this doc if the two ever disagree.
 
 ---
 
@@ -169,7 +169,7 @@ const FIELD_RULES: { key: keyof WorkloadDataValues; rules: NumberRules }[] = [
 - [ ] **Step 4: Run the tests, verify all pass**
 
 Run: `npx vitest run src/lib/simple-mode/validate-workload-data.test.ts`
-Expected: all tests PASS (22 tests).
+Expected: all tests PASS (26 tests — 21 pre-existing + the 5 new `projectLengthYears` cases).
 
 - [ ] **Step 5: Commit**
 
@@ -1763,7 +1763,7 @@ Expected: both tests PASS.
 - [ ] **Step 5: Run the full suite, typecheck, lint, and build**
 
 Run: `npx vitest run && npx tsc --noEmit -p tsconfig.app.json && npx eslint . && npm run build`
-Expected: all four succeed — 191 tests passing across 21 test files, no type errors, no lint errors, successful production build.
+Expected: all four succeed — 196 tests passing across 21 test files, no type errors, no lint errors, successful production build.
 
 - [ ] **Step 6: Commit**
 
