@@ -2,7 +2,7 @@ import type { ComputeRequirement, Throughput } from "@/types/vault-sizer-api";
 
 function formatThroughput(throughput: Throughput | null | undefined): string {
   if (throughput == null) return "—";
-  return `${throughput.inboundMBps} / ${throughput.outboundMBps} Mbps`;
+  return `${throughput.inboundMBps} / ${throughput.outboundMBps} MB/s`;
 }
 
 interface InfrastructureTelemetryProps {

@@ -17,7 +17,7 @@ describe("InfrastructureTelemetry", () => {
     expect(screen.getByText("RAM")).toBeInTheDocument();
     expect(screen.getByText("16 GB")).toBeInTheDocument();
     expect(screen.getByText("Network Throughput")).toBeInTheDocument();
-    expect(screen.getByText("120 / 80 Mbps")).toBeInTheDocument();
+    expect(screen.getByText("120 / 80 MB/s")).toBeInTheDocument();
   });
 
   it("renders a real 0 throughput reading distinctly from an absent one", () => {
@@ -28,7 +28,7 @@ describe("InfrastructureTelemetry", () => {
     };
     render(<InfrastructureTelemetry compute={compute} />);
 
-    expect(screen.getByText("0 / 0 Mbps")).toBeInTheDocument();
+    expect(screen.getByText("0 / 0 MB/s")).toBeInTheDocument();
     expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
