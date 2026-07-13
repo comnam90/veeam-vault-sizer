@@ -44,6 +44,12 @@ export function useCalculatedSizing(
 
     const requestId = ++latestRequestId.current;
     const controller = new AbortController();
+    // Dedicated ref, not derived from requestId === 1: if the very first
+    // render's data fails validation, the early return above never
+    // increments requestId, so a requestId === 1 check would misfire on
+    // the next real attempt instead of this one. See ADR-0017 for why this
+    // also means a dev-only Strict Mode double-invoke costs the real first
+    // load its immediate (no-debounce) dispatch.
     const isFirstRun = !hasRunRef.current;
     hasRunRef.current = true;
 
