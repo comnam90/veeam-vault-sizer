@@ -123,4 +123,58 @@ describe("ForecastHorizonControl", () => {
     expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "5");
     expect(screen.queryByText(/must be/i)).not.toBeInTheDocument();
   });
+
+  it("renders the Cap GFS to Forecast Horizon switch checked by default", () => {
+    render(
+      <ForecastHorizonControl
+        value={DEFAULT_WORKLOAD_DATA_VALUES}
+        onChange={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("switch", {
+        name: /cap gfs retention to forecast horizon/i,
+      }),
+    ).toBeChecked();
+  });
+
+  it("reflects capGfsToForecastHorizon=false as unchecked", () => {
+    render(
+      <ForecastHorizonControl
+        value={{
+          ...DEFAULT_WORKLOAD_DATA_VALUES,
+          capGfsToForecastHorizon: false,
+        }}
+        onChange={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("switch", {
+        name: /cap gfs retention to forecast horizon/i,
+      }),
+    ).not.toBeChecked();
+  });
+
+  it("toggles capGfsToForecastHorizon without changing other fields", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(
+      <ForecastHorizonControl
+        value={DEFAULT_WORKLOAD_DATA_VALUES}
+        onChange={handleChange}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("switch", {
+        name: /cap gfs retention to forecast horizon/i,
+      }),
+    );
+
+    expect(handleChange).toHaveBeenCalledWith({
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      capGfsToForecastHorizon: false,
+    });
+  });
 });

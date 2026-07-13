@@ -12,6 +12,7 @@ const validValues: WorkloadDataValues = {
   gfsMonthly: "12",
   gfsYearly: "3",
   projectLengthYears: "1",
+  capGfsToForecastHorizon: true,
 };
 
 describe("validateWorkloadData", () => {

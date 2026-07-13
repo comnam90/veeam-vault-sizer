@@ -2,6 +2,7 @@ import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { validateWorkloadData } from "@/lib/simple-mode/validate-workload-data";
 import type { WorkloadDataValues } from "@/types/simple-mode";
 
@@ -25,6 +26,7 @@ export function ForecastHorizonControl({
 }: ForecastHorizonControlProps) {
   const inputId = useId();
   const errorId = useId();
+  const capToggleId = useId();
   const error = validateWorkloadData(value).projectLengthYears;
 
   function setProjectLengthYears(next: string) {
@@ -65,6 +67,21 @@ export function ForecastHorizonControl({
           {error}
         </p>
       ) : null}
+      <div className="flex items-center gap-2">
+        <Switch
+          id={capToggleId}
+          checked={value.capGfsToForecastHorizon}
+          onCheckedChange={(checked) =>
+            onChange({ ...value, capGfsToForecastHorizon: checked })
+          }
+        />
+        <Label
+          htmlFor={capToggleId}
+          className="font-normal tracking-normal normal-case"
+        >
+          Cap GFS retention to Forecast Horizon
+        </Label>
+      </div>
     </div>
   );
 }

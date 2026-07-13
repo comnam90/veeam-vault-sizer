@@ -10,6 +10,7 @@ export interface WorkloadDataValues {
   gfsMonthly: string;
   gfsYearly: string;
   projectLengthYears: string;
+  capGfsToForecastHorizon: boolean;
 }
 
 export type WorkloadDataErrors = Partial<
@@ -26,7 +27,18 @@ export const DEFAULT_WORKLOAD_DATA_VALUES: WorkloadDataValues = {
   gfsMonthly: "12",
   gfsYearly: "3",
   projectLengthYears: "1",
+  capGfsToForecastHorizon: true,
 };
+
+// Weekly/Monthly/Yearly GFS period lengths, in days — shared by the vault
+// residency chain-completion math (vault-retention.ts) and the Forecast
+// Horizon GFS capping (cap-gfs-to-forecast-horizon.ts) so both agree on
+// what a GFS point "costs" in days.
+export const GFS_PERIOD_DAYS = {
+  weekly: 7,
+  monthly: 30,
+  yearly: 365,
+} as const;
 
 export type RepoType =
   | "vault-azure"

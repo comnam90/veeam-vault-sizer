@@ -42,7 +42,14 @@ function requireNumber(raw: string, rules: NumberRules): string | undefined {
   return undefined;
 }
 
-const FIELD_RULES: { key: keyof WorkloadDataValues; rules: NumberRules }[] = [
+// capGfsToForecastHorizon is a boolean Switch, not a numeric text field —
+// excluded from this validator's key type.
+type NumericFieldKey = Exclude<
+  keyof WorkloadDataValues,
+  "capGfsToForecastHorizon"
+>;
+
+const FIELD_RULES: { key: NumericFieldKey; rules: NumberRules }[] = [
   { key: "sourceSizeTB", rules: { exclusiveMin: 0 } },
   { key: "dailyChangeRatePercent", rules: { min: 0, max: 100 } },
   { key: "dataReductionPercent", rules: { min: 0, max: 100 } },

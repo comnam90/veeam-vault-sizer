@@ -32,7 +32,9 @@ describe("buildVmAgentRequest", () => {
     expect(result.days).toBe(30);
     expect(result.weeklies).toBe(4);
     expect(result.monthlies).toBe(12);
-    expect(result.yearlies).toBe(3);
+    // Capped from 3 to 1: gfsYearly=3 (3yr) exceeds the default 1yr Forecast
+    // Horizon, and capGfsToForecastHorizon defaults to true.
+    expect(result.yearlies).toBe(1);
 
     expect(result.productVersion).toBe(0);
     expect(result.calculatorMode).toBe(0);
@@ -78,6 +80,41 @@ describe("buildVmAgentRequest", () => {
 
     expect(result.growthRatePercent).toBe(25);
     expect(result.growthFactor).toBe(25);
+  });
+
+  it("caps GFS Monthly and Weekly to the Forecast Horizon by default", () => {
+    const values: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      gfsWeekly: "60",
+      gfsMonthly: "24",
+      gfsYearly: "1",
+      projectLengthYears: "1",
+    };
+
+    const result = buildVmAgentRequest(
+      values,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+    );
+
+    expect(result.weeklies).toBe(52); // floor(365/7)
+    expect(result.monthlies).toBe(12); // floor(365/30)
+    expect(result.yearlies).toBe(1); // unchanged, already within horizon
+  });
+
+  it("leaves GFS counts unmodified when capGfsToForecastHorizon is false", () => {
+    const values: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      gfsYearly: "7",
+      projectLengthYears: "1",
+      capGfsToForecastHorizon: false,
+    };
+
+    const result = buildVmAgentRequest(
+      values,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+    );
+
+    expect(result.yearlies).toBe(7);
   });
 
   it("maps a plain Vault target (no SOBR) as immutable object storage with no capacity/archive tiers", () => {

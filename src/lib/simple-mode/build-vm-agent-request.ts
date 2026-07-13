@@ -7,6 +7,7 @@ import {
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { VmAgentInputs } from "@/types/vault-sizer-api";
+import { capGfsToForecastHorizon } from "./cap-gfs-to-forecast-horizon";
 
 // Fixed sizing assumptions with no corresponding UI field yet.
 const BACKUP_WINDOW_HOURS = 8;
@@ -23,6 +24,15 @@ export function buildVmAgentRequest(
     );
   }
 
+  const rawGfs = {
+    weeklies: Number(workloadData.gfsWeekly),
+    monthlies: Number(workloadData.gfsMonthly),
+    yearlies: Number(workloadData.gfsYearly),
+  };
+  const gfs = workloadData.capGfsToForecastHorizon
+    ? capGfsToForecastHorizon(rawGfs, Number(workloadData.projectLengthYears))
+    : rawGfs;
+
   const base: VmAgentInputs = {
     productVersion: 0,
     calculatorMode: 0,
@@ -38,9 +48,9 @@ export function buildVmAgentRequest(
     growthRateScopeYears: Number(workloadData.projectLengthYears),
     projectLength: Number(workloadData.projectLengthYears),
     days: Number(workloadData.shortTermRetentionDays),
-    weeklies: Number(workloadData.gfsWeekly),
-    monthlies: Number(workloadData.gfsMonthly),
-    yearlies: Number(workloadData.gfsYearly),
+    weeklies: gfs.weeklies,
+    monthlies: gfs.monthlies,
+    yearlies: gfs.yearlies,
 
     largeBlock: false,
     backupWindowHours: BACKUP_WINDOW_HOURS,
