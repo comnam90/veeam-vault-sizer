@@ -31,7 +31,7 @@ function Slider({
         className={cn(
           "border-primary bg-background block size-4 shrink-0 rounded-full border shadow transition-colors",
           "focus-visible:ring-primary/20 focus-visible:ring-4 focus-visible:outline-none",
-          "disabled:pointer-events-none disabled:opacity-50",
+          "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         )}
       />
     </SliderPrimitive.Root>
