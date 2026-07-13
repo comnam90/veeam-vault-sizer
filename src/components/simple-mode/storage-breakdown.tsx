@@ -5,28 +5,32 @@ const TIERS = [
   {
     key: "performance",
     label: "Performance",
-    diskPurpose: 3,
+    // RepoLocal (block/file repo types, e.g. Hardened Repository) or
+    // RepoObject (vault/object-storage repo types) — exactly one applies,
+    // depending on the selected Performance Tier repo type.
+    diskPurposes: [2, 3],
     colorClassName: "bg-tier-performance",
   },
   {
     key: "capacity",
     label: "Capacity",
-    diskPurpose: 13,
+    diskPurposes: [13],
     colorClassName: "bg-tier-capacity",
   },
   {
     key: "archive",
     label: "Archive",
-    diskPurpose: 4,
+    diskPurposes: [4],
     colorClassName: "bg-tier-archive",
   },
 ] as const;
 
 function findTierDiskGB(
   volumes: Volume[],
-  diskPurpose: number,
+  diskPurposes: readonly number[],
 ): number | undefined {
-  return volumes.find((volume) => volume.diskPurpose === diskPurpose)?.diskGB;
+  return volumes.find((volume) => diskPurposes.includes(volume.diskPurpose))
+    ?.diskGB;
 }
 
 interface StorageBreakdownProps {
@@ -37,7 +41,7 @@ export function StorageBreakdown({ data }: StorageBreakdownProps) {
   const volumes = data?.repoCompute?.compute?.volumes ?? [];
   const tierRows = TIERS.map((tier) => ({
     ...tier,
-    diskGB: findTierDiskGB(volumes, tier.diskPurpose),
+    diskGB: findTierDiskGB(volumes, tier.diskPurposes),
   })).filter((tier) => tier.diskGB !== undefined);
 
   const totalGB = tierRows.reduce((sum, tier) => sum + (tier.diskGB ?? 0), 0);

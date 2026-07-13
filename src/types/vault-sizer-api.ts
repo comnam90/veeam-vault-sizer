@@ -86,9 +86,12 @@ export interface Volume {
 }
 
 // DiskType values relevant to repoCompute.volumes:
-// 3 = RepoObject (Performance Tier), 13 = RepoCapacityTier (Capacity Tier),
-// 4 = RepoArchive (Archive Tier). Other codes exist (OS, Cache, etc.) but
-// don't appear in this endpoint's practical output.
+// 2 = RepoLocal (Performance Tier, block/file repo types) or
+// 3 = RepoObject (Performance Tier, vault/object-storage repo types) —
+// exactly one of these two appears, depending on the selected Performance
+// Tier repo type. 13 = RepoCapacityTier (Capacity Tier), 4 = RepoArchive
+// (Archive Tier). Other codes exist (OS, Cache, etc.) but don't appear in
+// this endpoint's practical output.
 
 export interface ComputeRequirement {
   name?: string | null;

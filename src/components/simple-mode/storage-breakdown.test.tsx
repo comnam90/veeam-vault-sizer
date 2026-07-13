@@ -50,6 +50,14 @@ describe("StorageBreakdown", () => {
     );
   });
 
+  it("renders the Performance tier when its volume uses diskPurpose 2 (RepoLocal, e.g. Hardened Repository)", () => {
+    const data = makeData([{ diskGB: 33310.72, diskPurpose: 2 }]);
+    render(<StorageBreakdown data={data} />);
+
+    expect(screen.getByText("Performance")).toBeInTheDocument();
+    expect(screen.getAllByText("32.5 TB")).toHaveLength(2);
+  });
+
   it("renders all three tiers present in volumes[] and sums them into the grand total", () => {
     const data = makeData([
       { diskGB: 2048, diskPurpose: 3 }, // 2.0 TB
