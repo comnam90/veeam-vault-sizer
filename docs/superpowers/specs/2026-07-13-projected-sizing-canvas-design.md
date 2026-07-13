@@ -225,9 +225,32 @@ function useCalculatedSizing(
 
 **`ForecastHorizonControl`** — shadcn `<Slider>` (range 1–5) + shadcn `<Input>` (uncapped integer), both bound to `workloadData.projectLengthYears`, both calling `onWorkloadDataChange({ ...workloadData, projectLengthYears: next })`. The slider's thumb position clamps to its `[1,5]` track for display; the input's raw value (e.g. `10`) is what actually flows into the hook/API — this is the "adjusts or pins gracefully" behavior from the brief. No inline error text for out-of-range/non-numeric keystrokes; the control just clamps/ignores them locally rather than routing through `WorkloadDataErrors` (which nothing currently surfaces for a field this card doesn't render).
 
+**Clamping guard (Radix specifics):** Radix's `SliderPrimitive.Root` does not clamp an out-of-bounds controlled `value` prop itself — passing `11` against a `max={5}` produces a >100% position calculation, which can render the thumb outside the track or, for a non-finite input (`NaN`, from a mid-edit empty string), produce an invalid transform. `slider.tsx` stays a thin, unopinionated wrapper with no business logic, matching every other `ui/` primitive in this repo (e.g. `switch.tsx` just forwards props) — so this guard belongs in `ForecastHorizonControl`, not the primitive. It computes the value passed to `<Slider value={[...]}>` through a local helper, separate from the raw string shown in the `<Input>`:
+
+```ts
+function clampForSliderDisplay(raw: string): number {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return SLIDER_MIN;
+  return Math.min(Math.max(parsed, SLIDER_MIN), SLIDER_MAX);
+}
+```
+
+This absorbs empty-string/non-numeric input (`NaN` → `SLIDER_MIN`), negative values, and overflow (`10` → `SLIDER_MAX`) before Radix ever sees them — the `<Input>` itself still displays and propagates the uncapped raw value.
+
 **`StorageBreakdown`** — takes only `data: CVmAgentReturnObject | null`, deliberately not `repositoryConfig`. Whether the Capacity/Archive rows render at all is derived from whether `repoCompute.compute.volumes` contains an entry for `diskPurpose` 13 / 4 — not from reading `repositoryConfig.sobr.*.enabled`. The response is the ground truth of what was actually sized; keying off it means one data source instead of two that could disagree. Grand total and each tier's TB value come from summing/reading `volumes[].diskGB` (÷1024), per Correction 1. Bars use `tier-performance`/`tier-capacity`/`tier-archive` tokens, per Correction 4.
 
-**`InfrastructureTelemetry`** — takes `data?.proxyCompute?.compute`. A compact table: cores, RAM, and network throughput (inbound/outbound Mbps, from the `networkThroughput` field added in §4) — "background bandwidth" in the brief has no other field it could mean. Handles `undefined`/`null` gracefully (before the first response resolves) by rendering an empty/dash state, not an error.
+**`InfrastructureTelemetry`** — takes `data?.proxyCompute?.compute`. A compact table with **three fixed rows** — Cores, RAM, Network Throughput — that always render structurally; only the value cells vary. Handles `undefined`/`null` `compute` (before the first response resolves) by rendering `—` in every value cell, not an error.
+
+**Throughput nullability:** `networkThroughput` is `Throughput | null | undefined`, and a legitimate `0` (zero inbound/outbound bandwidth) is a valid, meaningful value — not the same as "absent." Formatting must use an explicit presence check, not truthiness, or a real `0` gets misrendered as missing:
+
+```ts
+function formatThroughput(throughput: Throughput | null | undefined): string {
+  if (throughput == null) return "—";
+  return `${throughput.inboundMBps} / ${throughput.outboundMBps} Mbps`;
+}
+```
+
+The row itself is never conditionally omitted based on the value — only ever based on whether `compute` exists at all (i.e., before the first successful response).
 
 All numeric values across these three components (TB, cores, GB RAM, Mbps) render in `font-mono` (JetBrains Mono), per CLAUDE.md's rule that alignment-sensitive numeric data uses the mono typeface, not Inter.
 
@@ -254,7 +277,7 @@ All numeric values across these three components (TB, cores, GB RAM, Mbps) rende
 7. Invalid input (e.g. blank `sourceSizeTB`) never calls `fetch`.
 8. Changing only `projectLengthYears` triggers a recalculation whose outbound request body carries the updated `projectLength`.
 
-Component tests (RTL + `user-event`): `storage-breakdown.test.tsx` (tier rows appear/disappear based on `volumes[]` presence; total equals the sum), `forecast-horizon-control.test.tsx` (slider/input both update `projectLengthYears`; out-of-range input pins the slider but keeps the raw value), `infrastructure-telemetry.test.tsx` (renders cores/RAM/throughput; handles `undefined` `proxyCompute`), `projected-sizing-card.test.tsx` (loading indicator, error banner, stale-data-preserved-under-error).
+Component tests (RTL + `user-event`): `storage-breakdown.test.tsx` (tier rows appear/disappear based on `volumes[]` presence; total equals the sum), `forecast-horizon-control.test.tsx` (slider/input both update `projectLengthYears`; out-of-range input pins the slider but keeps the raw value; empty-string/negative/non-numeric keystrokes produce no console error/warning and `clampForSliderDisplay` resolves to an in-bounds number), `infrastructure-telemetry.test.tsx` (renders cores/RAM/throughput; `networkThroughput` of `{ inboundMBps: 0, outboundMBps: 0 }` renders `"0 / 0 Mbps"`, not `—`; `null`/`undefined` `networkThroughput` or `compute` renders `—` in the value cells while all three rows remain present), `projected-sizing-card.test.tsx` (loading indicator, error banner, stale-data-preserved-under-error).
 
 Existing files get small additions: `build-vm-agent-request.test.ts` (`projectLength` populated from the new field), `validate-workload-data.test.ts` (new field's rule), `vault-sizer-client.test.ts` (`signal` forwarded to `fetch`).
 
