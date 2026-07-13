@@ -32,11 +32,26 @@ describe("ForecastHorizonControl", () => {
     );
   });
 
-  it("clamps to the minimum for a non-numeric raw value without throwing", () => {
+  it("clamps to the minimum for an empty raw value without throwing", () => {
     expect(() =>
       render(
         <ForecastHorizonControl
           value={{ ...DEFAULT_WORKLOAD_DATA_VALUES, projectLengthYears: "" }}
+          onChange={() => {}}
+        />,
+      ),
+    ).not.toThrow();
+    expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "1");
+  });
+
+  it("clamps to the minimum for a genuinely non-numeric raw value without throwing", () => {
+    expect(() =>
+      render(
+        <ForecastHorizonControl
+          value={{
+            ...DEFAULT_WORKLOAD_DATA_VALUES,
+            projectLengthYears: "abc",
+          }}
           onChange={() => {}}
         />,
       ),
