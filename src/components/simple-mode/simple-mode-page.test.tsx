@@ -1,17 +1,28 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SimpleModePage } from "./simple-mode-page";
 
 describe("SimpleModePage", () => {
-  it("renders the Workload Data card, the Repository Configuration card, and a reserved sidebar region", () => {
+  beforeEach(() => {
+    // ProjectedSizingCard's useCalculatedSizing dispatches a real fetch on
+    // mount; stub it so these tests don't hit the network.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders the Workload Data card, the Repository Configuration card, and the Projected Sizing card", () => {
     render(<SimpleModePage />);
 
     expect(screen.getByText("Workload Data")).toBeInTheDocument();
     expect(screen.getByText("Repository Configuration")).toBeInTheDocument();
-    expect(
-      screen.getByTestId("simple-mode-sidebar-placeholder"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Projected Sizing")).toBeInTheDocument();
   });
 
   it("threads live workloadData from WorkloadDataCard into BackupRepositoryCard's retention inheritance", async () => {
