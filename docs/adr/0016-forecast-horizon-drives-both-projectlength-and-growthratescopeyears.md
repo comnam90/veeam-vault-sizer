@@ -9,3 +9,5 @@ The calculator API's `VmAgentInputs` models `projectLength` (storage-sizing hori
 **Considered options**: keeping `growthRateScopeYears` hardcoded at `1` while only `projectLength` scales with the new control — rejected, because it would mean Infrastructure Telemetry's compute figures (also new in this task) silently stop reflecting the horizon the user is looking at, reading as a bug rather than a deliberate scope boundary to the SEs this tool is built to earn trust with.
 
 **Consequences**: a future task that needs these two horizons to diverge (e.g. sizing storage 5 years out while assuming only 1 year of proxy-compute growth) will need a second control and a product decision about how to present two separate horizons — revisit this ADR if that need arises.
+
+_See also: ADR-0019 extends Forecast Horizon to also cap GFS Weekly/Monthly/Yearly point counts, not just `projectLength`/`growthRateScopeYears`._

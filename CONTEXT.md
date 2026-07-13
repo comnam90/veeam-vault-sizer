@@ -17,8 +17,8 @@ The shortest active GFS interval (7/30/365 days for Weekly/Monthly/Yearly, which
 _Avoid_: "chain interval", "backup frequency" (implies a configurable schedule this app doesn't model)
 
 **Forecast Horizon**:
-The single user-facing time span (in years) the Projected Sizing canvas projects forward. It governs both how far ahead storage-tier sizing forecasts growth and how many years the proxy-compute sizing compounds its own growth rate over — two assumptions the calculator API otherwise treats as independently configurable, unified here into one control (ADR-0016).
-_Avoid_: "growth horizon", "projection window" (both leave ambiguous whether storage, compute, or both are meant)
+The single user-facing time span (in years) the Projected Sizing canvas projects forward. It governs how far ahead storage-tier sizing forecasts growth, how many years the proxy-compute sizing compounds its own growth rate over, and — when the "Cap GFS retention to Forecast Horizon" toggle is on (the default) — the maximum count sent for each GFS class, so a class's total duration (count × period) never exceeds it. These are assumptions the calculator API otherwise treats as independently configurable, unified here into one control (ADR-0016, ADR-0019).
+_Avoid_: "growth horizon", "projection window" (both leave ambiguous whether storage, compute, GFS retention, or all three are meant)
 
 **Total Required Storage**:
 The sum of every configured tier's sized capacity (Performance + Capacity + Archive) — the headline figure the Projected Sizing canvas shows. Distinct from the calculator API's `totalStorageTB` response value, which reports Performance Tier alone despite the name.

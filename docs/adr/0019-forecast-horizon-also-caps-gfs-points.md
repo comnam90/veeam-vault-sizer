@@ -1,0 +1,11 @@
+---
+status: accepted
+---
+
+# Forecast Horizon also caps GFS Weekly/Monthly/Yearly point counts sent to the calculator
+
+SEs using Veeam's own calculator UI reported that when a GFS class's total duration (`count × period`) exceeds the Forecast Horizon — e.g. GFS Yearly = 3 (3 years) with a 1-year horizon — the calculator sizes those points as pre-existing "brownfield" data on day one, while only growth gets scoped to the horizon; SEs expect the horizon to cap GFS point counts too, not just growth. `buildVmAgentRequest` now floors each of `weeklies`/`monthlies`/`yearlies` to `floor(horizonDays / periodDays)` before sending them (`cap-gfs-to-forecast-horizon.ts`), gated by a new `capGfsToForecastHorizon` toggle on `WorkloadDataValues` (default **on**) so SEs who deliberately want the old brownfield behavior can opt out. This extends what Forecast Horizon governs beyond `projectLength`/`growthRateScopeYears` (ADR-0016) to include GFS point counts — see also ADR-0016, and `CONTEXT.md`'s "Forecast Horizon" entry.
+
+**Considered options**: capping only Monthly/Yearly (the classes SEs actually flagged) — rejected in favor of capping all three classes with one consistent rule, since Weekly rarely triggers in practice anyway (the UI's minimum horizon is already 1 year ≈ 52 weekly points) and a uniform rule is simpler to reason about than a carved-out exception. Rounding instead of flooring — rejected: flooring guarantees a capped count never represents _more_ time than the horizon, matching the reported SE expectation exactly. Making the cap unconditional — rejected in favor of a default-on opt-out toggle, since some SEs may deliberately want brownfield-style sizing for a specific estimate.
+
+**Consequences**: sizing now reflects capped GFS counts, while the existing Vault Minimum Retention validation (`vault-retention.ts`) still validates against the raw, uncapped GFS values — deliberately: that check validates the retention policy an SE will actually deploy, not this sizing projection. So the sizing output and a residency warning can now reference different GFS counts for the same input; this is intended, not a bug. Also, `DEFAULT_WORKLOAD_DATA_VALUES`'s defaults (`gfsYearly: "3"`, `projectLengthYears: "1"`) mean this changes the tool's out-of-the-box sizing result unless the toggle is switched off.
