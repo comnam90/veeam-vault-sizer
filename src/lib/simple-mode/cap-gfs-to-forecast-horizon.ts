@@ -6,6 +6,14 @@ export interface GfsPoints {
   yearlies: number;
 }
 
+function capToHorizon(
+  count: number,
+  periodDays: number,
+  horizonDays: number,
+): number {
+  return Math.min(count, Math.floor(horizonDays / periodDays));
+}
+
 /**
  * Caps each GFS class's count so its total duration (count × period) never
  * exceeds the Forecast Horizon — otherwise the official calculator sizes
@@ -19,17 +27,12 @@ export function capGfsToForecastHorizon(
   const horizonDays = projectLengthYears * GFS_PERIOD_DAYS.yearly;
 
   return {
-    weeklies: Math.min(
-      gfs.weeklies,
-      Math.floor(horizonDays / GFS_PERIOD_DAYS.weekly),
-    ),
-    monthlies: Math.min(
+    weeklies: capToHorizon(gfs.weeklies, GFS_PERIOD_DAYS.weekly, horizonDays),
+    monthlies: capToHorizon(
       gfs.monthlies,
-      Math.floor(horizonDays / GFS_PERIOD_DAYS.monthly),
+      GFS_PERIOD_DAYS.monthly,
+      horizonDays,
     ),
-    yearlies: Math.min(
-      gfs.yearlies,
-      Math.floor(horizonDays / GFS_PERIOD_DAYS.yearly),
-    ),
+    yearlies: capToHorizon(gfs.yearlies, GFS_PERIOD_DAYS.yearly, horizonDays),
   };
 }
