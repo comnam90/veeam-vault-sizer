@@ -11,17 +11,17 @@ This task replaces that placeholder with a live **Projected Sizing** card: a rea
 
 ## Scope
 
-**In scope:** the `useCalculatedSizing` hook; a `projectLengthYears` field threaded through `WorkloadDataValues` → `buildVmAgentRequest`, feeding both `projectLength` (storage-sizing horizon) and `growthRateScopeYears` (proxy-compute growth horizon — see §3); an `AbortSignal` parameter on `callVaultSizerApi`; four new components (`ProjectedSizingCard`, `ForecastHorizonControl`, `StorageBreakdown`, `InfrastructureTelemetry`); two non-functional ghost placeholders inside `ProjectedSizingCard` marking the assumptions-note box and Export Report/Save Configuration actions as still-to-build (see §6); two new `ui/` primitives (`slider.tsx`, `progress.tsx`); one additive type fix (`networkThroughput` on `ComputeRequirement`).
+**In scope:** the `useCalculatedSizing` hook; a `projectLengthYears` field threaded through `WorkloadDataValues` → `buildVmAgentRequest`, feeding both `projectLength` (storage-sizing horizon) and `growthRateScopeYears` (proxy-compute growth horizon — see §3), plus `growthFactor` mirroring `growthRatePercent`'s source (ADR-0018); an `AbortSignal` parameter on `callVaultSizerApi`; four new components (`ProjectedSizingCard`, `ForecastHorizonControl`, `StorageBreakdown`, `InfrastructureTelemetry`); two non-functional ghost placeholders inside `ProjectedSizingCard` marking the assumptions-note box and Export Report/Save Configuration actions as still-to-build (see §6); two new `ui/` primitives (`slider.tsx`, `progress.tsx`). No type changes are needed on `vault-sizer-api.ts` — see Correction 3 and §4.
 
 **Out of scope:** Backup Copy sizing (still throws per ADR-0007 — the hook surfaces that as a generic error string, nothing more); a "monthly API transactions" telemetry row (in the original brief, dropped from the updated brief's telemetry bullet — see Correction 4); changing `functions/api/vault-sizer.ts`'s status codes; any density-mode ("Compact") toggle for the telemetry table, since no density-mode system exists anywhere in the codebase yet to hook into; the _functionality_ of the assumptions-note text box and Export Report/Save Configuration actions visible in `screen.png` — nothing in this task backs them, so they're represented only as the ghost placeholders above.
 
 ## Corrections from the brief
 
-Four places where the brief's literal instructions don't match the actual codebase/contract, resolved against primary sources before writing the rest of this spec:
+Four places where the brief's literal instructions don't match the actual codebase/contract, resolved against primary sources before writing the rest of this spec — plus one correction to this spec itself, caught during plan-writing verification:
 
 1. **"Total Storage Header ← `totalStorageTB`" is wrong.** `totalStorageTB` is documented (`vault-sizer-api.ts:203`, confirmed against the Swagger research note) as Performance-tier-only — "not a grand total across tiers." `screen.png`'s own numbers confirm this: 4.2 TB (Performance) + 14.2 TB (Capacity) = 18.4 TB (Total), a sum, not a field. The grand total and all three tier values instead derive from `repoCompute.compute.volumes[].diskGB`, grouped by `diskPurpose` (3=Performance, 13=Capacity, 4=Archive) — see §5.
 2. **There is no `501` anywhere in this codebase.** `functions/api/vault-sizer.ts` returns HTTP 400 with a plain message when `buildVmAgentRequest` throws for `backupPath === "copy"`. The hook treats this like any other error-envelope message; no status-code special-casing.
-3. **`networkThroughput` isn't modeled on `ComputeRequirement` yet**, even though it's on the wire (Swagger research note, Discrepancy 7) and is the only field that could mean the brief's "background bandwidth." Added in §4.
+3. ~~`networkThroughput` isn't modeled on `ComputeRequirement` yet.`~~ **This was wrong — self-correction, not a brief correction.** The field is already present on `ComputeRequirement`, added by Task 1's schema realignment (verified against `git show a2f9322:src/types/vault-sizer-api.ts`, the commit that predates this entire task). The original research note this claim was based on described a gap that existed _before_ Task 1 shipped; it was already closed by the time this spec was written, and citing it here without re-checking the live file was an error. No type change is needed — see §4.
 4. **Tier bar colors follow `DESIGN-v3`'s tokens, not `screen.png`'s.** The mockup shows both Performance and Capacity bars in the same green; CLAUDE.md is explicit that Stitch's `tier-performance`/`tier-capacity`/`tier-archive` tokens (green/blue/gray) override any other palette reference, including this older screenshot.
 
 ## Architecture
@@ -118,18 +118,9 @@ export async function callVaultSizerApi(
 
 **`functions/api/vault-sizer.ts`** — no changes. Cancellation happens between the browser and the Function; an aborted client fetch never reaches it in a way that needs handling.
 
-## 4. Type fix — `src/types/vault-sizer-api.ts`
+## 4. `src/types/vault-sizer-api.ts` — no change needed
 
-```ts
-export interface ComputeRequirement {
-  name?: string | null;
-  site?: Location | null;
-  cores: number;
-  ram: number;
-  volumes?: Volume[] | null;
-  networkThroughput?: Throughput | null; // NEW — already on the wire, per Swagger research note
-}
-```
+Correction 3 (below) turned out to be wrong: `networkThroughput?: Throughput | null` is **already present** on `ComputeRequirement`, verified directly against `git show a2f9322:src/types/vault-sizer-api.ts` (Task 1's own commit) — it was added as part of Task 1's schema realignment, not left out. `InfrastructureTelemetry` (§6) consumes it as-is; no type edit is required in this task.
 
 ## 5. `useCalculatedSizing` — `src/hooks/use-calculated-sizing.ts`
 
@@ -301,7 +292,7 @@ Component tests (RTL + `user-event`): `storage-breakdown.test.tsx` (tier rows ap
 
 Existing files get small additions: `build-vm-agent-request.test.ts` (`projectLength` and `growthRateScopeYears` both populated from the new field — including updating the existing assertion that hardcoded `growthRateScopeYears` to `1`, plus a case with a non-default `projectLengthYears` proving both fields track it; `growthFactor` populated from `yearlyGrowthPercent` alongside the already-tested `growthRatePercent` — including updating the existing assertion that `growthFactor` is `toBeUndefined()`), `validate-workload-data.test.ts` (new field's rule), `vault-sizer-client.test.ts` (`signal` forwarded to `fetch`).
 
-`npx tsc --noEmit -p tsconfig.app.json` — no type errors from the `networkThroughput` addition or the new `WorkloadDataValues` field across every existing call site.
+`npx tsc --noEmit -p tsconfig.app.json` — no type errors from the new `WorkloadDataValues` field across every existing call site.
 
 ## Follow-up work (not this task)
 
