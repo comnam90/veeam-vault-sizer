@@ -8,7 +8,6 @@ import {
 import type { VmAgentInputs } from "@/types/vault-sizer-api";
 
 // Fixed sizing assumptions with no corresponding UI field yet.
-const GROWTH_RATE_SCOPE_YEARS = 1;
 const BACKUP_WINDOW_HOURS = 8;
 
 export function buildVmAgentRequest(
@@ -34,7 +33,9 @@ export function buildVmAgentRequest(
     changeRate: Number(workloadData.dailyChangeRatePercent),
     reduction: Number(workloadData.dataReductionPercent),
     growthRatePercent: Number(workloadData.yearlyGrowthPercent),
-    growthRateScopeYears: GROWTH_RATE_SCOPE_YEARS,
+    growthFactor: Number(workloadData.yearlyGrowthPercent),
+    growthRateScopeYears: Number(workloadData.projectLengthYears),
+    projectLength: Number(workloadData.projectLengthYears),
     days: Number(workloadData.shortTermRetentionDays),
     weeklies: Number(workloadData.gfsWeekly),
     monthlies: Number(workloadData.gfsMonthly),

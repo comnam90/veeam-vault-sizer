@@ -4,6 +4,7 @@ import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
   DEFAULT_WORKLOAD_DATA_VALUES,
   type RepositoryConfigValues,
+  type WorkloadDataValues,
 } from "@/types/simple-mode";
 
 describe("buildVmAgentRequest", () => {
@@ -41,10 +42,40 @@ describe("buildVmAgentRequest", () => {
     expect(result.blockCloning).toBe(true);
     expect(result.largeBlock).toBe(false);
     expect(result.showPoints).toBe(true);
-    expect(result.growthRateScopeYears).toBe(1);
+    expect(result.growthRateScopeYears).toBe(1); // DEFAULT_WORKLOAD_DATA_VALUES.projectLengthYears = "1"
     expect(result.backupWindowHours).toBe(8);
-    expect(result.growthFactor).toBeUndefined();
-    expect(result.projectLength).toBeUndefined();
+    expect(result.growthFactor).toBe(10); // same source as growthRatePercent
+    expect(result.projectLength).toBe(1); // same source as growthRateScopeYears
+  });
+
+  it("derives growthRateScopeYears and projectLength from the same projectLengthYears field", () => {
+    const values: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      projectLengthYears: "5",
+    };
+
+    const result = buildVmAgentRequest(
+      values,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+    );
+
+    expect(result.growthRateScopeYears).toBe(5);
+    expect(result.projectLength).toBe(5);
+  });
+
+  it("derives growthFactor from the same yearlyGrowthPercent field as growthRatePercent", () => {
+    const values: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      yearlyGrowthPercent: "25",
+    };
+
+    const result = buildVmAgentRequest(
+      values,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+    );
+
+    expect(result.growthRatePercent).toBe(25);
+    expect(result.growthFactor).toBe(25);
   });
 
   it("maps a plain Vault target (no SOBR) as immutable object storage with no capacity/archive tiers", () => {
