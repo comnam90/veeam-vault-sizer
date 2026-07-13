@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 
 function Slider({
   className,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   return (
@@ -26,8 +30,15 @@ function Slider({
           className="bg-primary absolute h-full"
         />
       </SliderPrimitive.Track>
+      {/* Root has no role/tabIndex of its own — Thumb is the focusable
+          role="slider" element assistive tech lands on, so ARIA attributes
+          describing the control belong here, not on Root. */}
       <SliderPrimitive.Thumb
         data-slot="slider-thumb"
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid}
         className={cn(
           "border-primary bg-background block size-4 shrink-0 rounded-full border shadow transition-colors",
           "focus-visible:ring-primary/20 focus-visible:ring-4 focus-visible:outline-none",

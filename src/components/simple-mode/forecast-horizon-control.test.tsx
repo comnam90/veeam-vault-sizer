@@ -19,6 +19,18 @@ describe("ForecastHorizonControl", () => {
     expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "1");
   });
 
+  it("gives the slider its own accessible name, distinct from the input's", () => {
+    render(
+      <ForecastHorizonControl
+        value={DEFAULT_WORKLOAD_DATA_VALUES}
+        onChange={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("slider", { name: "Forecast Horizon slider" }),
+    ).toBeInTheDocument();
+  });
+
   it("clamps the slider's displayed position for an out-of-range raw value, while the input keeps the raw value", () => {
     render(
       <ForecastHorizonControl

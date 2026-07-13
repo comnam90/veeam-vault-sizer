@@ -38,6 +38,7 @@ export function ForecastHorizonControl({
           Forecast Horizon
         </Label>
         <Slider
+          aria-label="Forecast Horizon slider"
           value={[clampForSliderDisplay(value.projectLengthYears)]}
           min={SLIDER_MIN}
           max={SLIDER_MAX}
