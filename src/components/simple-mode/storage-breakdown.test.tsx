@@ -63,4 +63,30 @@ describe("StorageBreakdown", () => {
     expect(screen.getByText("Archive")).toBeInTheDocument();
     expect(screen.getByText("7.0 TB")).toBeInTheDocument(); // grand total
   });
+
+  it("gives each bar its own proportional percentage of the grand total, not an equal split", () => {
+    const data = makeData([
+      { diskGB: 2048, diskPurpose: 3 }, // 2 TB of 7 TB => ~28.57%
+      { diskGB: 4096, diskPurpose: 13 }, // 4 TB of 7 TB => ~57.14%
+      { diskGB: 1024, diskPurpose: 4 }, // 1 TB of 7 TB => ~14.29%
+    ]);
+    render(<StorageBreakdown data={data} />);
+
+    // Rendered in TIERS order: Performance, Capacity, Archive.
+    const [performanceBar, capacityBar, archiveBar] =
+      screen.getAllByRole("progressbar");
+
+    expect(Number(performanceBar.getAttribute("aria-valuenow"))).toBeCloseTo(
+      (2 / 7) * 100,
+      5,
+    );
+    expect(Number(capacityBar.getAttribute("aria-valuenow"))).toBeCloseTo(
+      (4 / 7) * 100,
+      5,
+    );
+    expect(Number(archiveBar.getAttribute("aria-valuenow"))).toBeCloseTo(
+      (1 / 7) * 100,
+      5,
+    );
+  });
 });
