@@ -2,6 +2,7 @@ import {
   BLOCK_GENERATION_DAYS,
   REPO_TYPE_CATEGORY,
   repoTypeRequiresImmutability,
+  repoTypeSupportsBlockCloning,
   type RepositoryConfigValues,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
@@ -41,7 +42,6 @@ export function buildVmAgentRequest(
     monthlies: Number(workloadData.gfsMonthly),
     yearlies: Number(workloadData.gfsYearly),
 
-    blockCloning: true,
     largeBlock: false,
     backupWindowHours: BACKUP_WINDOW_HOURS,
     showPoints: true,
@@ -60,7 +60,8 @@ export function buildVmAgentRequest(
   };
 
   if (repositoryConfig.targetRepository !== "sobr") {
-    // Direct-to-Vault, no SOBR: targetRepository is always a Vault type.
+    // Direct-to-Vault, no SOBR: targetRepository is always a Vault type,
+    // which never supports Fast Clone.
     return {
       ...base,
       objectStorage: true,
@@ -69,6 +70,7 @@ export function buildVmAgentRequest(
       immutablePerfDays: Number(repositoryConfig.targetRepositoryImmutableDays),
       blockGenerationDays:
         BLOCK_GENERATION_DAYS[repositoryConfig.targetRepository] ?? 0,
+      blockCloning: false,
     };
   }
 
@@ -88,6 +90,7 @@ export function buildVmAgentRequest(
     immutablePerfDays: performanceImmutable
       ? Number(sobr.performanceImmutableDays)
       : 0,
+    blockCloning: repoTypeSupportsBlockCloning(sobr.performanceType),
   };
 
   if (capacityTier.enabled) {

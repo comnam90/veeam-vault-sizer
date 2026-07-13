@@ -39,7 +39,9 @@ describe("buildVmAgentRequest", () => {
     expect(result.hyperVisor).toBe(0);
     expect(result.backupType).toBe(0);
     expect(result.copiesEnabled).toBe(false);
-    expect(result.blockCloning).toBe(true);
+    // Default targetRepository is vault-azure — a Vault type, which doesn't
+    // support VBR's ReFS/XFS-only Fast Clone feature.
+    expect(result.blockCloning).toBe(false);
     expect(result.largeBlock).toBe(false);
     expect(result.showPoints).toBe(true);
     expect(result.growthRateScopeYears).toBe(1); // DEFAULT_WORKLOAD_DATA_VALUES.projectLengthYears = "1"
@@ -115,7 +117,34 @@ describe("buildVmAgentRequest", () => {
     expect(result.immutablePerf).toBe(false);
     expect(result.immutablePerfDays).toBe(0);
     expect(result.blockGenerationDays).toBe(0);
+    // NAS is block/file but not ReFS/XFS-backed — no Fast Clone support.
+    expect(result.blockCloning).toBe(false);
   });
+
+  it.each([
+    ["refs-xfs", true],
+    ["hardened-repository", true],
+    ["nas", false],
+    ["dedup-appliance", false],
+    ["vault-azure", false],
+    ["aws-s3", false],
+  ] as const)(
+    "for SOBR Performance Tier type %s, sets blockCloning=%s",
+    (performanceType, expected) => {
+      const values: RepositoryConfigValues = {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        targetRepository: "sobr",
+        sobr: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+          performanceType,
+        },
+      };
+
+      const result = buildVmAgentRequest(DEFAULT_WORKLOAD_DATA_VALUES, values);
+
+      expect(result.blockCloning).toBe(expected);
+    },
+  );
 
   it("uses Block Generation 0 for an immutable Performance Tier type with no batching window (Hardened Repository)", () => {
     const values: RepositoryConfigValues = {

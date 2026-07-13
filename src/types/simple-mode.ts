@@ -90,6 +90,19 @@ export function repoTypeRequiresImmutability(type: RepoType): boolean {
   return REPO_TYPES_REQUIRING_IMMUTABILITY.has(type);
 }
 
+// VBR's Fast Clone (block cloning) is a ReFS/XFS local-filesystem feature.
+// Hardened Repository is XFS-backed, so it qualifies alongside plain
+// Windows/Linux ReFS/XFS. NAS, Dedup Appliance, Vault, and object-storage
+// types don't run on a reflink-capable local filesystem, so they don't.
+export const REPO_TYPES_SUPPORTING_BLOCK_CLONING = new Set<RepoType>([
+  "refs-xfs",
+  "hardened-repository",
+]);
+
+export function repoTypeSupportsBlockCloning(type: RepoType): boolean {
+  return REPO_TYPES_SUPPORTING_BLOCK_CLONING.has(type);
+}
+
 // Google Cloud is the only repo type VBR disallows from feeding Archive Tier
 // — whether it's the Performance Tier type (no Capacity Tier in between) or
 // the Capacity Tier type itself. VBR draws no distinction between those two
