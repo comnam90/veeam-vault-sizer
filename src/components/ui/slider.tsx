@@ -40,7 +40,7 @@ function Slider({
         aria-describedby={ariaDescribedBy}
         aria-invalid={ariaInvalid}
         className={cn(
-          "border-primary bg-background block size-4 shrink-0 rounded-full border shadow transition-colors",
+          "border-primary bg-background block size-4 shrink-0 rounded-full border transition-colors",
           "focus-visible:ring-primary/20 focus-visible:ring-4 focus-visible:outline-none",
           "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         )}
