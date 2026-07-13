@@ -98,7 +98,7 @@ describe("ProjectedSizingCard", () => {
     // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
     await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
     expect(screen.getByText("32 GB")).toBeInTheDocument();
-    expect(screen.getByText("100 / 50 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("100.0 / 50.0 MB/s")).toBeInTheDocument();
   });
 
   it("shows the error banner and keeps last-good data visible beneath it", async () => {

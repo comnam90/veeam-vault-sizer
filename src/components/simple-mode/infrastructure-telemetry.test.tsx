@@ -17,7 +17,21 @@ describe("InfrastructureTelemetry", () => {
     expect(screen.getByText("RAM")).toBeInTheDocument();
     expect(screen.getByText("16 GB")).toBeInTheDocument();
     expect(screen.getByText("Network Throughput")).toBeInTheDocument();
-    expect(screen.getByText("120 / 80 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("120.0 / 80.0 MB/s")).toBeInTheDocument();
+  });
+
+  it("rounds raw floating-point throughput to one decimal place, matching StorageBreakdown's precision", () => {
+    const compute: ComputeRequirement = {
+      cores: 4,
+      ram: 8,
+      networkThroughput: {
+        inboundMBps: 10.922666666666666,
+        outboundMBps: 5.461333333333333,
+      },
+    };
+    render(<InfrastructureTelemetry compute={compute} />);
+
+    expect(screen.getByText("10.9 / 5.5 MB/s")).toBeInTheDocument();
   });
 
   it("renders a real 0 throughput reading distinctly from an absent one", () => {
@@ -28,7 +42,7 @@ describe("InfrastructureTelemetry", () => {
     };
     render(<InfrastructureTelemetry compute={compute} />);
 
-    expect(screen.getByText("0 / 0 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("0.0 / 0.0 MB/s")).toBeInTheDocument();
     expect(screen.queryByText("—")).not.toBeInTheDocument();
   });
 
