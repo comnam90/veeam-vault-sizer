@@ -90,6 +90,14 @@ projectLength: Number(workloadData.projectLengthYears),
 
 The previously-hardcoded `GROWTH_RATE_SCOPE_YEARS = 1` constant is removed. Per the Swagger, `growthRateScopeYears` drives _proxy compute_ growth-years while `projectLength` drives the _storage-sizing_ horizon — genuinely separate pipelines — but this task is the first place either becomes an interactive, user-facing "horizon" control (`ForecastHorizonControl`). Leaving `growthRateScopeYears` pinned at `1` while `projectLength` scales up to 100 years would mean `InfrastructureTelemetry`'s cores/RAM/throughput numbers — exposed for the first time by this same task — silently stop reflecting the horizon the user is looking at, which reads as a bug rather than a deliberate scope boundary. Sharing one input value is safe: `growthRateScopeYears`'s own declared range (`0`–`100`) matches `projectLength`'s, so no new validation is needed beyond §2's existing rule. See ADR-0016 and CONTEXT.md's "Forecast Horizon" entry.
 
+A third field follows the same pattern, on the _rate_ axis rather than the _years_ axis:
+
+```ts
+growthFactor: Number(workloadData.yearlyGrowthPercent),
+```
+
+`growthRatePercent` (proxy-compute growth rate) has always been populated from `workloadData.yearlyGrowthPercent`; `growthFactor` (storage/GFS growth rate — same `0`–`100` percentage scale) was left unset by Task 1 to rely on its documented fallback to `growthRatePercent`. That fallback means today's behavior is already "correct" by coincidence, but only because nothing in this codebase records that the two are linked — a future change to either field independently would silently desync them. Setting `growthFactor` explicitly from the same input it already implicitly falls back to closes that gap, mirroring `growthRateScopeYears`/`projectLength` above: one existing UI value now explicitly drives two independently-modeled sizing pipelines' rate inputs, not just their horizon inputs. See ADR-0018.
+
 **`vault-sizer-client.ts`** — add an optional `signal`:
 
 ```ts
@@ -285,12 +293,13 @@ All numeric values across these three components (TB, cores, GB RAM, Mbps) rende
 6. Abort-triggered rejection leaves `error` as `null`.
 7. Invalid input (e.g. blank `sourceSizeTB`) never calls `fetch`.
 8. Changing only `projectLengthYears` triggers a recalculation whose outbound request body carries the updated `projectLength` (and `growthRateScopeYears` — see §3).
+9. Changing only `yearlyGrowthPercent` triggers a recalculation whose outbound request body carries the updated `growthFactor` alongside `growthRatePercent` (see §3, ADR-0018).
 
 No test targets the Strict Mode dev-only delay described in §5 — it's an accepted limitation, not a guaranteed behavior, and `renderHook` doesn't reproduce Strict Mode's double-invoke by default anyway.
 
 Component tests (RTL + `user-event`): `storage-breakdown.test.tsx` (tier rows appear/disappear based on `volumes[]` presence; total equals the sum; `data === null` renders the grand total as `—` with no tier rows), `forecast-horizon-control.test.tsx` (slider/input both update `projectLengthYears`; out-of-range input pins the slider but keeps the raw value; empty-string/negative/non-numeric keystrokes produce no console error/warning, `clampForSliderDisplay` resolves to an in-bounds number, and an inline error renders for genuinely invalid raw values), `infrastructure-telemetry.test.tsx` (renders cores/RAM/throughput; `networkThroughput` of `{ inboundMBps: 0, outboundMBps: 0 }` renders `"0 / 0 Mbps"`, not `—`; `null`/`undefined` `networkThroughput` or `compute` renders `—` in the value cells while all three rows remain present), `projected-sizing-card.test.tsx` (loading indicator, error banner, stale-data-preserved-under-error, both ghost placeholders present).
 
-Existing files get small additions: `build-vm-agent-request.test.ts` (`projectLength` and `growthRateScopeYears` both populated from the new field — including updating the existing assertion that hardcoded `growthRateScopeYears` to `1`, plus a case with a non-default `projectLengthYears` proving both fields track it), `validate-workload-data.test.ts` (new field's rule), `vault-sizer-client.test.ts` (`signal` forwarded to `fetch`).
+Existing files get small additions: `build-vm-agent-request.test.ts` (`projectLength` and `growthRateScopeYears` both populated from the new field — including updating the existing assertion that hardcoded `growthRateScopeYears` to `1`, plus a case with a non-default `projectLengthYears` proving both fields track it; `growthFactor` populated from `yearlyGrowthPercent` alongside the already-tested `growthRatePercent` — including updating the existing assertion that `growthFactor` is `toBeUndefined()`), `validate-workload-data.test.ts` (new field's rule), `vault-sizer-client.test.ts` (`signal` forwarded to `fetch`).
 
 `npx tsc --noEmit -p tsconfig.app.json` — no type errors from the `networkThroughput` addition or the new `WorkloadDataValues` field across every existing call site.
 
