@@ -19,6 +19,17 @@ const mockData: CVmAgentReturnObject = {
       volumes: [{ diskGB: 18841, diskPurpose: 3 }],
     },
   },
+  // Deliberately distinct from repoCompute's cores/ram above: proves
+  // InfrastructureTelemetry reads proxyCompute (proxy sizing), not
+  // repoCompute (repository storage volumes) — a swap between the two
+  // is type-compatible and wouldn't otherwise be caught by these tests.
+  proxyCompute: {
+    compute: {
+      cores: 8,
+      ram: 32,
+      networkThroughput: { inboundMBps: 100, outboundMBps: 50 },
+    },
+  },
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -69,6 +80,25 @@ describe("ProjectedSizingCard", () => {
     );
 
     expect(screen.getByLabelText("Recalculating")).toBeInTheDocument();
+  });
+
+  it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
+    await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
+    expect(screen.getByText("32 GB")).toBeInTheDocument();
+    expect(screen.getByText("100 / 50 MB/s")).toBeInTheDocument();
   });
 
   it("shows the error banner and keeps last-good data visible beneath it", async () => {
