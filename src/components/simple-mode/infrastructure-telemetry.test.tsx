@@ -23,6 +23,7 @@ describe("InfrastructureTelemetry", () => {
     render(<InfrastructureTelemetry compute={compute} />);
 
     expect(screen.queryByText("Network Throughput")).not.toBeInTheDocument();
+    expect(screen.queryByText("120.0 / 80.0 MB/s")).not.toBeInTheDocument();
   });
 
   it("renders — in both value cells, with both rows present, when compute is undefined", () => {
