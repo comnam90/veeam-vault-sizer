@@ -1,9 +1,4 @@
-import type { ComputeRequirement, Throughput } from "@/types/vault-sizer-api";
-
-function formatThroughput(throughput: Throughput | null | undefined): string {
-  if (throughput == null) return "—";
-  return `${throughput.inboundMBps.toFixed(1)} / ${throughput.outboundMBps.toFixed(1)} MB/s`;
-}
+import type { ComputeRequirement } from "@/types/vault-sizer-api";
 
 interface InfrastructureTelemetryProps {
   compute: ComputeRequirement | null | undefined;
@@ -15,10 +10,6 @@ export function InfrastructureTelemetry({
   const rows = [
     { label: "Cores", value: compute ? String(compute.cores) : "—" },
     { label: "RAM", value: compute ? `${compute.ram} GB` : "—" },
-    {
-      label: "Network Throughput",
-      value: formatThroughput(compute?.networkThroughput),
-    },
   ];
 
   return (
