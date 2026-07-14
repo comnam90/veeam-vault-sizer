@@ -7,12 +7,12 @@ describe("NetworkBandwidth", () => {
     render(
       <NetworkBandwidth
         nightlyIncremental={{
-          inboundMBps: 10.922666666666666,
-          outboundMBps: 5.461333333333333,
+          inboundMBps: 10.92266667,
+          outboundMBps: 5.46133333,
         }}
         initialFullRestore={{
-          inboundMBps: 121.362962962962963,
-          outboundMBps: 60.681481481481481,
+          inboundMBps: 121.36296296,
+          outboundMBps: 60.68148148,
         }}
       />,
     );
