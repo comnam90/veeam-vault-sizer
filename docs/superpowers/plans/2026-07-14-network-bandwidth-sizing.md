@@ -349,6 +349,7 @@ git commit -m "feat: add NetworkBandwidth component for nightly incremental and 
 
 - Modify: `src/components/simple-mode/infrastructure-telemetry.tsx`
 - Modify: `src/components/simple-mode/infrastructure-telemetry.test.tsx`
+- Modify: `src/components/simple-mode/projected-sizing-card.test.tsx:101` (drops an assertion this task's implementation change makes false — see Step 2)
 
 - [ ] **Step 1: Rewrite the test file for the 2-row shape**
 
@@ -394,12 +395,63 @@ describe("InfrastructureTelemetry", () => {
 
 This drops the throughput-precision, real-zero, and null-`networkThroughput` cases from the old test file — that exact coverage now lives in `network-bandwidth.test.tsx` (Task 3), against the component that actually owns that row now.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **Step 2: Remove the now-stale assertion from `projected-sizing-card.test.tsx`**
 
-Run: `npm run test:run -- infrastructure-telemetry`
-Expected: FAIL — the "no longer renders a Network Throughput row" test fails because the current component still renders it; the "both rows present" test fails because `getAllByText("—")` still finds 3 elements, not 2.
+This task's implementation change (Step 4 below) removes `InfrastructureTelemetry`'s Network Throughput row entirely, which will make `projected-sizing-card.test.tsx`'s existing `"wires InfrastructureTelemetry to proxyCompute, not repoCompute"` test assert on text that no longer renders anywhere (that row doesn't move into `NetworkBandwidth` until Task 5). Fix the assertion now, as part of this same change, so this task's own commit stays green rather than landing red until Task 5.
 
-- [ ] **Step 3: Write the implementation**
+In `src/components/simple-mode/projected-sizing-card.test.tsx`, replace:
+
+```tsx
+it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
+  vi.mocked(fetch).mockResolvedValue(
+    jsonResponse({ success: true, data: mockData }),
+  );
+
+  render(
+    <ProjectedSizingCard
+      workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+      repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+      onChange={() => {}}
+    />,
+  );
+
+  // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
+  await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
+  expect(screen.getByText("32 GB")).toBeInTheDocument();
+  expect(screen.getByText("100.0 / 50.0 MB/s")).toBeInTheDocument();
+});
+```
+
+with:
+
+```tsx
+it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
+  vi.mocked(fetch).mockResolvedValue(
+    jsonResponse({ success: true, data: mockData }),
+  );
+
+  render(
+    <ProjectedSizingCard
+      workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+      repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+      onChange={() => {}}
+    />,
+  );
+
+  // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
+  await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
+  expect(screen.getByText("32 GB")).toBeInTheDocument();
+});
+```
+
+(Just the `100.0 / 50.0 MB/s` assertion dropped — that figure's assertion returns in Task 5, against `NetworkBandwidth`, once that component actually renders it.)
+
+- [ ] **Step 3: Run the affected test files to verify the expected red/green split**
+
+Run: `npm run test:run -- infrastructure-telemetry projected-sizing-card`
+Expected: `infrastructure-telemetry` FAILs — the "no longer renders a Network Throughput row" test fails because the current component still renders it; the "both rows present" test fails because `getAllByText("—")` still finds 3 elements, not 2. `projected-sizing-card` PASSes — Step 2 already removed the assertion that would otherwise break here.
+
+- [ ] **Step 4: Write the implementation**
 
 Replace the full contents of `src/components/simple-mode/infrastructure-telemetry.tsx` with:
 
@@ -436,15 +488,15 @@ export function InfrastructureTelemetry({
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **Step 5: Run the full test suite to verify this commit lands green**
 
-Run: `npm run test:run -- infrastructure-telemetry`
-Expected: PASS, all 3 cases.
+Run: `npm run test:run`
+Expected: PASS — every test file, including both `infrastructure-telemetry` (all 3 cases) and `projected-sizing-card` (all 4 existing cases, unchanged in count until Task 5 adds a new one).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/components/simple-mode/infrastructure-telemetry.tsx src/components/simple-mode/infrastructure-telemetry.test.tsx
+git add src/components/simple-mode/infrastructure-telemetry.tsx src/components/simple-mode/infrastructure-telemetry.test.tsx src/components/simple-mode/projected-sizing-card.test.tsx
 git commit -m "refactor: trim InfrastructureTelemetry to Cores/RAM, throughput moved to NetworkBandwidth"
 ```
 
@@ -457,54 +509,9 @@ git commit -m "refactor: trim InfrastructureTelemetry to Cores/RAM, throughput m
 - Modify: `src/components/simple-mode/projected-sizing-card.tsx`
 - Modify: `src/components/simple-mode/projected-sizing-card.test.tsx`
 
-- [ ] **Step 1: Update the test file**
+- [ ] **Step 1: Add a new test to the test file**
 
-In `src/components/simple-mode/projected-sizing-card.test.tsx`, replace the existing `"wires InfrastructureTelemetry to proxyCompute, not repoCompute"` test:
-
-```tsx
-it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
-  vi.mocked(fetch).mockResolvedValue(
-    jsonResponse({ success: true, data: mockData }),
-  );
-
-  render(
-    <ProjectedSizingCard
-      workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
-      repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
-      onChange={() => {}}
-    />,
-  );
-
-  // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
-  await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
-  expect(screen.getByText("32 GB")).toBeInTheDocument();
-  expect(screen.getByText("100.0 / 50.0 MB/s")).toBeInTheDocument();
-});
-```
-
-with this (drops the throughput assertion — that's a different component's concern now):
-
-```tsx
-it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
-  vi.mocked(fetch).mockResolvedValue(
-    jsonResponse({ success: true, data: mockData }),
-  );
-
-  render(
-    <ProjectedSizingCard
-      workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
-      repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
-      onChange={() => {}}
-    />,
-  );
-
-  // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
-  await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
-  expect(screen.getByText("32 GB")).toBeInTheDocument();
-});
-```
-
-Then add a new test directly after it:
+`projected-sizing-card.test.tsx`'s `"wires InfrastructureTelemetry to proxyCompute, not repoCompute"` test was already trimmed to drop its throughput assertion in Task 4, Step 2 (that figure isn't `InfrastructureTelemetry`'s concern anymore). This step only adds a new test, directly after it, covering `NetworkBandwidth`'s wiring:
 
 ```tsx
 it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
@@ -643,3 +650,4 @@ git commit -m "feat: render NetworkBandwidth in ProjectedSizingCard"
 - **Spec coverage:** every "In scope" bullet from the spec has a task — constants module relocation (Task 1), the new pure function (Task 2), the new component (Task 3), `InfrastructureTelemetry` trimmed (Task 4), `ProjectedSizingCard` wiring (Task 5). `formatThroughput`'s relocation is covered inside Tasks 3–4 (added new in Task 3, removed from its old home in Task 4). Out-of-scope items (adjustable windows, tier disk throughput, worker-side computation, horizon-scaling, renaming `InfrastructureTelemetry`) have no corresponding task, as intended.
 - **Placeholder scan:** no TBD/TODO; every step shows complete, runnable code and exact commands.
 - **Type consistency:** `Throughput`, `ComputeRequirement`, `calculateInitialFullBandwidth`, `NetworkBandwidth`'s prop names (`nightlyIncremental`, `initialFullRestore`) are used identically across Tasks 2, 3, and 5.
+- **Commit atomicity:** each task's final verification step runs against the full suite, not just its own scoped file, before committing — Task 4 in particular fixes `projected-sizing-card.test.tsx`'s now-stale `100.0 / 50.0 MB/s` assertion inline (Step 2) rather than leaving it for Task 5, so Task 4's commit doesn't land with a known-red test elsewhere in the suite.
