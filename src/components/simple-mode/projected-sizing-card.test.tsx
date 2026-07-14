@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { ProjectedSizingCard } from "./projected-sizing-card";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
@@ -113,13 +113,27 @@ describe("ProjectedSizingCard", () => {
       />,
     );
 
-    // proxyCompute.compute.networkThroughput from mockData.
-    await vi.waitFor(() =>
-      expect(screen.getByText("100.0 / 50.0 MB/s")).toBeInTheDocument(),
-    );
+    // proxyCompute.compute.networkThroughput from mockData, scoped to the
+    // Nightly Incremental row so a nightly/initial-full swap would fail.
+    await vi.waitFor(() => {
+      const nightlyRow = screen
+        .getByText("Nightly Incremental (8h)")
+        .closest("tr");
+      expect(nightlyRow).not.toBeNull();
+      expect(
+        within(nightlyRow!).getByText("100.0 / 50.0 MB/s"),
+      ).toBeInTheDocument();
+    });
     // Derived from DEFAULT_WORKLOAD_DATA_VALUES: sourceSizeTB "10",
     // dataReductionPercent "50" — computed instantly, no fetch involved.
-    expect(screen.getByText("121.4 / 60.7 MB/s")).toBeInTheDocument();
+    // Scoped to the Initial Full / Restore row for the same reason.
+    const initialFullRow = screen
+      .getByText("Initial Full / Restore (24h)")
+      .closest("tr");
+    expect(initialFullRow).not.toBeNull();
+    expect(
+      within(initialFullRow!).getByText("121.4 / 60.7 MB/s"),
+    ).toBeInTheDocument();
   });
 
   it("shows the error banner and keeps last-good data visible beneath it", async () => {
