@@ -18,11 +18,11 @@ describe("NetworkBandwidth", () => {
     );
 
     expect(screen.getByText("Nightly Incremental (8h)")).toBeInTheDocument();
-    expect(screen.getByText("5.5 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("43.7 Mbps")).toBeInTheDocument();
     expect(
       screen.getByText("Initial Full / Restore (24h)"),
     ).toBeInTheDocument();
-    expect(screen.getByText("60.7 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("485.5 Mbps")).toBeInTheDocument();
   });
 
   it("renders a real 0 throughput distinctly from an absent one", () => {
@@ -33,7 +33,7 @@ describe("NetworkBandwidth", () => {
       />,
     );
 
-    expect(screen.getByText("0.0 MB/s")).toBeInTheDocument();
+    expect(screen.getByText("0.0 Mbps")).toBeInTheDocument();
     expect(screen.getAllByText("—")).toHaveLength(1);
   });
 

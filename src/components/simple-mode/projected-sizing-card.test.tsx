@@ -120,7 +120,7 @@ describe("ProjectedSizingCard", () => {
         .getByText("Nightly Incremental (8h)")
         .closest("tr");
       expect(nightlyRow).not.toBeNull();
-      expect(within(nightlyRow!).getByText("50.0 MB/s")).toBeInTheDocument();
+      expect(within(nightlyRow!).getByText("400.0 Mbps")).toBeInTheDocument();
     });
     // Derived from DEFAULT_WORKLOAD_DATA_VALUES: sourceSizeTB "10",
     // dataReductionPercent "50" — computed instantly, no fetch involved.
@@ -129,7 +129,7 @@ describe("ProjectedSizingCard", () => {
       .getByText("Initial Full / Restore (24h)")
       .closest("tr");
     expect(initialFullRow).not.toBeNull();
-    expect(within(initialFullRow!).getByText("60.7 MB/s")).toBeInTheDocument();
+    expect(within(initialFullRow!).getByText("485.5 Mbps")).toBeInTheDocument();
   });
 
   it("shows the error banner and keeps last-good data visible beneath it", async () => {
