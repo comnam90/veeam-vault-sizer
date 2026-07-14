@@ -1,9 +1,11 @@
 import { LoaderCircle, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCalculatedSizing } from "@/hooks/use-calculated-sizing";
+import { calculateInitialFullBandwidth } from "@/lib/simple-mode/calculate-initial-full-bandwidth";
 import { ForecastHorizonControl } from "./forecast-horizon-control";
 import { StorageBreakdown } from "./storage-breakdown";
 import { InfrastructureTelemetry } from "./infrastructure-telemetry";
+import { NetworkBandwidth } from "./network-bandwidth";
 import type {
   RepositoryConfigValues,
   WorkloadDataValues,
@@ -23,6 +25,10 @@ export function ProjectedSizingCard({
   const { data, isLoading, error } = useCalculatedSizing(
     workloadData,
     repositoryConfig,
+  );
+  const initialFullRestore = calculateInitialFullBandwidth(
+    workloadData.sourceSizeTB,
+    workloadData.dataReductionPercent,
   );
 
   return (
@@ -53,6 +59,10 @@ export function ProjectedSizingCard({
         ) : null}
         <StorageBreakdown data={data} />
         <InfrastructureTelemetry compute={data?.proxyCompute?.compute} />
+        <NetworkBandwidth
+          nightlyIncremental={data?.proxyCompute?.compute?.networkThroughput}
+          initialFullRestore={initialFullRestore}
+        />
         <div
           data-testid="projected-sizing-assumptions-placeholder"
           className="border-border h-16 rounded-lg border border-dashed"

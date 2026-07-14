@@ -100,6 +100,28 @@ describe("ProjectedSizingCard", () => {
     expect(screen.getByText("32 GB")).toBeInTheDocument();
   });
 
+  it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // proxyCompute.compute.networkThroughput from mockData.
+    await vi.waitFor(() =>
+      expect(screen.getByText("100.0 / 50.0 MB/s")).toBeInTheDocument(),
+    );
+    // Derived from DEFAULT_WORKLOAD_DATA_VALUES: sourceSizeTB "10",
+    // dataReductionPercent "50" — computed instantly, no fetch involved.
+    expect(screen.getByText("121.4 / 60.7 MB/s")).toBeInTheDocument();
+  });
+
   it("shows the error banner and keeps last-good data visible beneath it", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(jsonResponse({ success: true, data: mockData }))
