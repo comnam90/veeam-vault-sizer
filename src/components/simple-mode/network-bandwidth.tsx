@@ -6,7 +6,7 @@ import {
 
 function formatThroughput(throughput: Throughput | null | undefined): string {
   if (throughput == null) return "—";
-  return `${throughput.inboundMBps.toFixed(1)} / ${throughput.outboundMBps.toFixed(1)} MB/s`;
+  return `${throughput.outboundMBps.toFixed(1)} MB/s`;
 }
 
 interface NetworkBandwidthProps {

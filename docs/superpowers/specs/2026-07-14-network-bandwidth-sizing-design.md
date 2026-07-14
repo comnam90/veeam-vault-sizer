@@ -189,6 +189,10 @@ computed directly in the render body (cheap arithmetic, no memoization needed). 
 - `projected-sizing-card.test.tsx`: `NetworkBandwidth` renders alongside `InfrastructureTelemetry` with values sourced correctly from `data` and `workloadData`.
 - `build-vm-agent-request.test.ts`: no behavior change expected, but re-run to confirm the `BACKUP_WINDOW_HOURS` relocation doesn't alter `backupWindowHours: 8` in the built request.
 
+## Addendum (2026-07-15): outbound-only display
+
+`formatThroughput` now renders only `outboundMBps` (e.g. `"60.7 MB/s"`, not `"121.4 / 60.7 MB/s"`). Rationale: the vault always holds reduced (deduped/compressed) data while the source/target host holds raw data, so `outboundMBps` is the vault-facing figure in every row — write-to-repo for Nightly Incremental and for the Initial Full leg, and (despite the field name) the same reduced magnitude as the read-from-repo traffic for the Restore leg. Since SE sizing cares about the Vault/repo-facing link, not the source-host-facing one, inbound is dropped from display. This closes part of Design Decision 2's open item: with only one number shown per row, there's no longer an inbound/outbound pair whose scenario-mapping needs explaining in a tooltip. `Throughput` and `calculateInitialFullBandwidth` are unchanged — both fields are still computed, only the unused `inboundMBps` half stops being displayed.
+
 ## Follow-up work (not this task)
 
 - Exposing `repoCompute.compute.volumes[].throughputMbps` (per-tier disk throughput) for storage-backend/offload validation — a separate concept from proxy network bandwidth, discussed earlier in the same conversation but not part of this task.
