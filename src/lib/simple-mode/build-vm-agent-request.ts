@@ -7,10 +7,8 @@ import {
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { VmAgentInputs } from "@/types/vault-sizer-api";
+import { BACKUP_WINDOW_HOURS } from "./backup-windows";
 import { capGfsToForecastHorizon } from "./cap-gfs-to-forecast-horizon";
-
-// Fixed sizing assumptions with no corresponding UI field yet.
-const BACKUP_WINDOW_HOURS = 8;
 
 export function buildVmAgentRequest(
   workloadData: WorkloadDataValues,
