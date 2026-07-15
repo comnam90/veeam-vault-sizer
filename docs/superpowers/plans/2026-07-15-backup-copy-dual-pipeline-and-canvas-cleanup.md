@@ -45,7 +45,7 @@
 
 Direct-mode output must stay byte-identical (existing tests are the regression guard). The new `buildCopyVmAgentRequests` sizes the Primary as a standalone repo of any type and the Secondary via the same target/SOBR dispatch as direct, each with its own resolved retention (D1). `buildVmAgentRequest` keeps throwing for copy — it is the direct-only entry point; the worker uses `buildCopyVmAgentRequests` for copy.
 
-- [ ] **Step 1: Write failing tests for `buildCopyVmAgentRequests`**
+- [x] **Step 1: Write failing tests for `buildCopyVmAgentRequests`**
 
 Append inside the existing `describe("buildVmAgentRequest", ...)` block's closing — i.e. add a new sibling `describe` at the end of `src/lib/simple-mode/build-vm-agent-request.test.ts` (after the final `});` on line 282), and add `buildCopyVmAgentRequests` to the import on line 2:
 
@@ -180,12 +180,12 @@ describe("buildCopyVmAgentRequests", () => {
 });
 ```
 
-- [ ] **Step 2: Run the new tests to verify they fail**
+- [x] **Step 2: Run the new tests to verify they fail**
 
 Run: `npx vitest run src/lib/simple-mode/build-vm-agent-request.test.ts`
 Expected: FAIL — `buildCopyVmAgentRequests` is not exported / not a function.
 
-- [ ] **Step 3: Rewrite `build-vm-agent-request.ts` with the decomposition**
+- [x] **Step 3: Rewrite `build-vm-agent-request.ts` with the decomposition**
 
 Replace the entire contents of `src/lib/simple-mode/build-vm-agent-request.ts` with:
 
@@ -398,7 +398,7 @@ export function buildCopyVmAgentRequests(
 }
 ```
 
-- [ ] **Step 4: Run the full builder test file to verify all pass**
+- [x] **Step 4: Run the full builder test file to verify all pass**
 
 Run: `npx vitest run src/lib/simple-mode/build-vm-agent-request.test.ts`
 Expected: PASS — the existing direct-mode tests (regression guard for byte-identical output) and the new `buildCopyVmAgentRequests` tests all pass. The existing `throws for Backup Copy, naming ADR-0007` test still passes (the new message still contains "ADR-0007").
@@ -406,7 +406,7 @@ Expected: PASS — the existing direct-mode tests (regression guard for byte-ide
 Then run the full suite: `npm run test:run`
 Expected: PASS — in particular `functions/api/vault-sizer.test.ts`, which drives the real builder through `onRequestPost` and independently guards byte-identical direct output (`sentBody.sourceTB`, `sentBody.objectStorage`), stays green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/simple-mode/build-vm-agent-request.ts src/lib/simple-mode/build-vm-agent-request.test.ts
@@ -424,7 +424,7 @@ git commit -m "refactor: decompose request builder and add buildCopyVmAgentReque
 
 Extract the tier-row and summation math (currently inline in `StorageBreakdown`) into pure functions so the per-site total and the copy master-header total use one definition. The filter becomes `> 0` (D9) — the real upstream returns unconfigured tiers at `0 GB`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/lib/simple-mode/storage-tiers.test.ts`:
 
@@ -509,12 +509,12 @@ describe("getTotalStorageGB", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/lib/simple-mode/storage-tiers.test.ts`
 Expected: FAIL — cannot resolve `./storage-tiers`.
 
-- [ ] **Step 3: Create `src/lib/simple-mode/storage-tiers.ts`**
+- [x] **Step 3: Create `src/lib/simple-mode/storage-tiers.ts`**
 
 ```ts
 import type { CVmAgentReturnObject, Volume } from "@/types/vault-sizer-api";
@@ -576,12 +576,12 @@ export function getTotalStorageGB(data: CVmAgentReturnObject | null): number {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/lib/simple-mode/storage-tiers.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/simple-mode/storage-tiers.ts src/lib/simple-mode/storage-tiers.test.ts
@@ -597,7 +597,7 @@ git commit -m "feat: add storage-tiers helper with > 0 tier filter and summation
 - Modify: `src/components/simple-mode/storage-breakdown.tsx` (full rewrite below)
 - Test: `src/components/simple-mode/storage-breakdown.test.tsx` (append one test)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append this `it` block inside the existing `describe("StorageBreakdown", ...)` in `src/components/simple-mode/storage-breakdown.test.tsx` (before its closing `});` on line 100):
 
@@ -618,12 +618,12 @@ Append this `it` block inside the existing `describe("StorageBreakdown", ...)` i
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/components/simple-mode/storage-breakdown.test.tsx`
 Expected: FAIL — the current `!== undefined` filter keeps the two `0 GB` tiers, so "Capacity"/"Archive" are found and the assertions fail.
 
-- [ ] **Step 3: Rewrite `storage-breakdown.tsx` to use the helper**
+- [x] **Step 3: Rewrite `storage-breakdown.tsx` to use the helper**
 
 Replace the entire contents of `src/components/simple-mode/storage-breakdown.tsx` with:
 
@@ -678,7 +678,7 @@ export function StorageBreakdown({ data }: StorageBreakdownProps) {
 }
 ```
 
-- [ ] **Step 4: Run the full test file to verify all pass**
+- [x] **Step 4: Run the full test file to verify all pass**
 
 Run: `npx vitest run src/components/simple-mode/storage-breakdown.test.tsx`
 Expected: PASS — existing tests (unchanged rendering) plus the new zero-tier test.
@@ -686,7 +686,7 @@ Expected: PASS — existing tests (unchanged rendering) plus the new zero-tier t
 Then run the full suite: `npm run test:run`
 Expected: PASS — in particular `projected-sizing-card.test.tsx`, which renders `StorageBreakdown` and asserts `18.4 TB`, stays green (its non-zero fixture is unaffected by the `> 0` filter).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/simple-mode/storage-breakdown.tsx src/components/simple-mode/storage-breakdown.test.tsx
@@ -708,7 +708,7 @@ git commit -m "refactor: StorageBreakdown consumes storage-tiers, hides zero tie
 
 `SizerBffResponse` is imported by both the worker and the client, so changing it cascades through client → hook → card. They all migrate here. Copy mode still returns 400 (the worker still calls `buildVmAgentRequest`, which throws for copy) — the copy fan-out arrives in Task 5. This task is done when `npm run build` typechecks and every test passes.
 
-- [ ] **Step 1: Update the response types**
+- [x] **Step 1: Update the response types**
 
 In `src/types/simple-mode.ts`, replace the existing `SizerBffResponse` type (lines 294–296) with:
 
@@ -732,7 +732,7 @@ export type SizerResult =
     };
 ```
 
-- [ ] **Step 2: Tag the worker's direct response**
+- [x] **Step 2: Tag the worker's direct response**
 
 In `functions/api/vault-sizer.ts`, change the success return (line 78) from:
 
@@ -746,7 +746,7 @@ to:
 return jsonResponse({ success: true, mode: "direct", data }, 200);
 ```
 
-- [ ] **Step 3: Rewrite the client to return `SizerResult`**
+- [x] **Step 3: Rewrite the client to return `SizerResult`**
 
 Replace the entire contents of `src/lib/api/vault-sizer-client.ts` with:
 
@@ -786,7 +786,7 @@ export async function callVaultSizerApi(
 }
 ```
 
-- [ ] **Step 4: Widen the hook's `data` state type**
+- [x] **Step 4: Widen the hook's `data` state type**
 
 In `src/hooks/use-calculated-sizing.ts`:
 
@@ -822,7 +822,7 @@ to:
 data: SizerResult | null;
 ```
 
-- [ ] **Step 5: Unwrap direct-mode data in the card**
+- [x] **Step 5: Unwrap direct-mode data in the card**
 
 In `src/components/simple-mode/projected-sizing-card.tsx`, after the `initialFullRestore` declaration (line 32), add:
 
@@ -836,7 +836,7 @@ Then update the three usages:
 - `<InfrastructureTelemetry compute={data?.proxyCompute?.compute} />` → `<InfrastructureTelemetry compute={directData?.proxyCompute?.compute} />`
 - `nightlyIncremental={data?.proxyCompute?.compute?.networkThroughput}` → `nightlyIncremental={directData?.proxyCompute?.compute?.networkThroughput}`
 
-- [ ] **Step 6: Update the four affected test files to the new shapes**
+- [x] **Step 6: Update the four affected test files to the new shapes**
 
 `functions/api/vault-sizer.test.ts` — the direct success assertion (lines 44–45):
 
@@ -866,7 +866,7 @@ expect(body).toEqual({
 
 - Replace every `{ success: true, data: mockData }` with `{ success: true, mode: "direct", data: mockData }`.
 
-- [ ] **Step 7: Run the affected tests and the typecheck build**
+- [x] **Step 7: Run the affected tests and the typecheck build**
 
 Run: `npx vitest run functions/api/vault-sizer.test.ts src/lib/api/vault-sizer-client.test.ts src/hooks/use-calculated-sizing.test.ts src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: PASS (copy still returns 400 via the retained throw; the existing "rejects Backup Copy" worker test still passes).
@@ -877,7 +877,7 @@ Expected: PASS — full suite green after the contract migration.
 Run: `npm run build`
 Expected: PASS — `tsc -b` typechecks the whole project with the new union (no dangling references to the old `{ success, data }` shape).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/types/simple-mode.ts functions/api/vault-sizer.ts src/lib/api/vault-sizer-client.ts src/hooks/use-calculated-sizing.ts src/components/simple-mode/projected-sizing-card.tsx functions/api/vault-sizer.test.ts src/lib/api/vault-sizer-client.test.ts src/hooks/use-calculated-sizing.test.ts src/components/simple-mode/projected-sizing-card.test.tsx
@@ -895,7 +895,7 @@ git commit -m "refactor: migrate sizer response to a mode-tagged discriminated u
 
 The worker branches on `backupPath`: copy builds two inputs, calls upstream twice under a strict `Promise.all`, parses each body defensively, fails whole with a side-labeled error, and aggregates two `CVmAgentReturnObject`s (D3, D4).
 
-- [ ] **Step 1: Replace the copy-reject test with copy fan-out tests**
+- [x] **Step 1: Replace the copy-reject test with copy fan-out tests**
 
 In `functions/api/vault-sizer.test.ts`, delete the entire `it("rejects Backup Copy requests before calling upstream", ...)` test (lines 147–165) and add these tests in its place (still inside the `describe` block). Also add the `copyConfig` helper near the top of the file, after the `postRequest` function:
 
@@ -1048,12 +1048,12 @@ it("returns 502 when a copy upstream call rejects (network failure)", async () =
 });
 ```
 
-- [ ] **Step 2: Run the test file to verify the new copy tests fail**
+- [x] **Step 2: Run the test file to verify the new copy tests fail**
 
 Run: `npx vitest run functions/api/vault-sizer.test.ts`
 Expected: FAIL — copy mode still returns 400 (the worker still calls `buildVmAgentRequest`, which throws for copy). The new copy tests fail on their status/body assertions.
 
-- [ ] **Step 3: Rewrite the worker with the copy fan-out**
+- [x] **Step 3: Rewrite the worker with the copy fan-out**
 
 Replace the entire contents of `functions/api/vault-sizer.ts` with:
 
@@ -1232,12 +1232,12 @@ async function handleCopy(bffRequest: SizerBffRequest): Promise<Response> {
 }
 ```
 
-- [ ] **Step 4: Run the worker test file to verify all pass**
+- [x] **Step 4: Run the worker test file to verify all pass**
 
 Run: `npx vitest run functions/api/vault-sizer.test.ts`
 Expected: PASS — the direct-mode tests (unchanged) plus the five new copy tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add functions/api/vault-sizer.ts functions/api/vault-sizer.test.ts
@@ -1255,7 +1255,7 @@ git commit -m "feat: fan Backup Copy requests out into two upstream sizing calls
 
 One site's full section: a header (title + repo-type badge), the storage breakdown, and the proxy compute + network tables — reusing the existing display components verbatim.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `src/components/simple-mode/site-sizing-section.test.tsx`:
 
@@ -1313,12 +1313,12 @@ describe("SiteSizingSection", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/components/simple-mode/site-sizing-section.test.tsx`
 Expected: FAIL — cannot resolve `./site-sizing-section`.
 
-- [ ] **Step 3: Create `src/components/simple-mode/site-sizing-section.tsx`**
+- [x] **Step 3: Create `src/components/simple-mode/site-sizing-section.tsx`**
 
 ```tsx
 import { StorageBreakdown } from "./storage-breakdown";
@@ -1361,12 +1361,12 @@ export function SiteSizingSection({
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/components/simple-mode/site-sizing-section.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/simple-mode/site-sizing-section.tsx src/components/simple-mode/site-sizing-section.test.tsx
@@ -1384,7 +1384,7 @@ git commit -m "feat: add SiteSizingSection for one pipeline's storage and comput
 
 When `data.mode === "copy"`, render a master header (combined total = sum of both sites' tier storage, D6) above a `SiteSizingSection` for each site. Direct/null keeps the existing flat layout. Badges are derived from `repositoryConfig` (D8).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append this `it` block inside the `describe("ProjectedSizingCard", ...)` in `src/components/simple-mode/projected-sizing-card.test.tsx` (before its closing `});` on line 196). `CVmAgentReturnObject` is already imported at the top of the file:
 
@@ -1468,12 +1468,12 @@ it("renders the split canvas with a combined total and both site sections in cop
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: FAIL — copy mode has no split layout yet; "Combined Required Storage" is not found.
 
-- [ ] **Step 3: Rewrite `projected-sizing-card.tsx` with the branch**
+- [x] **Step 3: Rewrite `projected-sizing-card.tsx` with the branch**
 
 Replace the entire contents of `src/components/simple-mode/projected-sizing-card.tsx` with:
 
@@ -1618,12 +1618,12 @@ export function ProjectedSizingCard({
 }
 ```
 
-- [ ] **Step 4: Run the card test file to verify all pass**
+- [x] **Step 4: Run the card test file to verify all pass**
 
 Run: `npx vitest run src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: PASS — the existing direct-mode tests plus the new copy split test.
 
-- [ ] **Step 5: Full verification**
+- [x] **Step 5: Full verification**
 
 Run: `npm run test:run`
 Expected: PASS — entire suite.
@@ -1634,7 +1634,7 @@ Expected: PASS — typecheck + build.
 Run: `npm run lint`
 Expected: PASS — no lint errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/simple-mode/projected-sizing-card.tsx src/components/simple-mode/projected-sizing-card.test.tsx
