@@ -42,7 +42,7 @@
 
 Pure refactor (D15) — output is byte-identical for every input. No new tests: the existing direct-mode suite (`build-vm-agent-request.test.ts`, all cases) and copy-mode suite (`buildCopyVmAgentRequests` describe block, same file) already exercise every branch this routes through, so they're the regression guard.
 
-- [ ] **Step 1: Add `buildTargetInputs` and rewire both call sites**
+- [x] **Step 1: Add `buildTargetInputs` and rewire both call sites**
 
 In `src/lib/simple-mode/build-vm-agent-request.ts`, add this function directly above `buildVmAgentRequest`:
 
@@ -104,7 +104,7 @@ const secondary = buildTargetInputs(
 
 `buildStandaloneRepoInputs` and `buildSobrInputs` stay module-private and unchanged.
 
-- [ ] **Step 2: Run the full builder test file to verify all pass unchanged**
+- [x] **Step 2: Run the full builder test file to verify all pass unchanged**
 
 Run: `npx vitest run src/lib/simple-mode/build-vm-agent-request.test.ts`
 Expected: PASS — every existing direct-mode and copy-mode case, unmodified, still passes (output is identical; only the internal routing moved).
@@ -112,7 +112,7 @@ Expected: PASS — every existing direct-mode and copy-mode case, unmodified, st
 Then run the full suite: `npm run test:run`
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/lib/simple-mode/build-vm-agent-request.ts
@@ -364,7 +364,7 @@ Expected: PASS.
 Then run the full suite: `npm run test:run`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/simple-mode/storage-tiers.ts src/lib/simple-mode/storage-tiers.test.ts
