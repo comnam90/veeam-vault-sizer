@@ -32,7 +32,7 @@ describe("useCalculatedSizing", () => {
 
   it("fires immediately on mount, with no debounce delay", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     const { result } = renderHook(() =>
@@ -44,14 +44,16 @@ describe("useCalculatedSizing", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
 
-    await vi.waitFor(() => expect(result.current.data).toEqual(mockData));
+    await vi.waitFor(() =>
+      expect(result.current.data).toEqual({ mode: "direct", data: mockData }),
+    );
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
   it("collapses rapid consecutive changes into a single fetch call, using the latest values", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     const { rerender } = renderHook(
@@ -98,7 +100,7 @@ describe("useCalculatedSizing", () => {
 
   it("sets isLoading synchronously on a value change and clears it once the request settles", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     const { result, rerender } = renderHook(
@@ -137,7 +139,9 @@ describe("useCalculatedSizing", () => {
 
     vi.mocked(fetch)
       .mockImplementationOnce(() => firstResponse)
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: newerData }));
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, mode: "direct", data: newerData }),
+      );
 
     const { result, rerender } = renderHook(
       ({ workloadData }) =>
@@ -156,18 +160,22 @@ describe("useCalculatedSizing", () => {
       await vi.advanceTimersByTimeAsync(500);
     });
 
-    await vi.waitFor(() => expect(result.current.data).toEqual(newerData));
+    await vi.waitFor(() =>
+      expect(result.current.data).toEqual({ mode: "direct", data: newerData }),
+    );
 
     // The superseded first request's controller was aborted.
     expect(firstCallSignal?.aborted).toBe(true);
 
     // The first request resolving *after* the second has already settled
     // must not clobber the newer state.
-    resolveFirst(jsonResponse({ success: true, data: olderData }));
+    resolveFirst(
+      jsonResponse({ success: true, mode: "direct", data: olderData }),
+    );
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(result.current.data).toEqual(newerData);
+    expect(result.current.data).toEqual({ mode: "direct", data: newerData });
   });
 
   it("leaves error null when a rejection is caused by abort (supersession, not failure)", async () => {
@@ -176,7 +184,9 @@ describe("useCalculatedSizing", () => {
         const error = new DOMException("Aborted", "AbortError");
         return Promise.reject(error);
       })
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: mockData }));
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, mode: "direct", data: mockData }),
+      );
 
     const { result, rerender } = renderHook(
       ({ workloadData }) =>
@@ -193,13 +203,17 @@ describe("useCalculatedSizing", () => {
       await vi.advanceTimersByTimeAsync(500);
     });
 
-    await vi.waitFor(() => expect(result.current.data).toEqual(mockData));
+    await vi.waitFor(() =>
+      expect(result.current.data).toEqual({ mode: "direct", data: mockData }),
+    );
     expect(result.current.error).toBeNull();
   });
 
   it("sets error on a non-abort rejection and leaves prior data intact", async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: mockData }))
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, mode: "direct", data: mockData }),
+      )
       .mockResolvedValueOnce(
         jsonResponse(
           { success: false, error: "Upstream sizing API unreachable" },
@@ -213,7 +227,9 @@ describe("useCalculatedSizing", () => {
       { initialProps: { workloadData: DEFAULT_WORKLOAD_DATA_VALUES } },
     );
 
-    await vi.waitFor(() => expect(result.current.data).toEqual(mockData));
+    await vi.waitFor(() =>
+      expect(result.current.data).toEqual({ mode: "direct", data: mockData }),
+    );
 
     const edited: WorkloadDataValues = {
       ...DEFAULT_WORKLOAD_DATA_VALUES,
@@ -227,7 +243,7 @@ describe("useCalculatedSizing", () => {
     await vi.waitFor(() =>
       expect(result.current.error).toBe("Upstream sizing API unreachable"),
     );
-    expect(result.current.data).toEqual(mockData);
+    expect(result.current.data).toEqual({ mode: "direct", data: mockData });
   });
 
   it("never calls fetch while workloadData fails validation", async () => {
@@ -247,7 +263,7 @@ describe("useCalculatedSizing", () => {
 
   it("carries an updated projectLengthYears through to the outbound request body as projectLength", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     const { rerender } = renderHook(

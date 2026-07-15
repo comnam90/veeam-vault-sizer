@@ -24,9 +24,12 @@ describe("callVaultSizerApi", () => {
 
   it("POSTs workloadData and repositoryConfig to /api/vault-sizer and returns the unwrapped data", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ success: true, data: mockData }), {
-        status: 200,
-      }),
+      new Response(
+        JSON.stringify({ success: true, mode: "direct", data: mockData }),
+        {
+          status: 200,
+        },
+      ),
     );
 
     const result = await callVaultSizerApi(
@@ -42,7 +45,7 @@ describe("callVaultSizerApi", () => {
         repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
       }),
     });
-    expect(result).toEqual(mockData);
+    expect(result).toEqual({ mode: "direct", data: mockData });
   });
 
   it("throws the gateway's error message when success is false", async () => {
@@ -66,9 +69,12 @@ describe("callVaultSizerApi", () => {
 
   it("forwards an AbortSignal to fetch when provided", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ success: true, data: mockData }), {
-        status: 200,
-      }),
+      new Response(
+        JSON.stringify({ success: true, mode: "direct", data: mockData }),
+        {
+          status: 200,
+        },
+      ),
     );
     const controller = new AbortController();
 

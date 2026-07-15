@@ -292,5 +292,19 @@ export interface SizerBffRequest {
 }
 
 export type SizerBffResponse =
-  | { success: true; data: CVmAgentReturnObject }
+  | { success: true; mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      success: true;
+      mode: "copy";
+      primary: CVmAgentReturnObject;
+      secondary: CVmAgentReturnObject;
+    }
   | { success: false; error: string };
+
+export type SizerResult =
+  | { mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      mode: "copy";
+      primary: CVmAgentReturnObject;
+      secondary: CVmAgentReturnObject;
+    };

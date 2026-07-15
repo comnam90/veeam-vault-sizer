@@ -75,7 +75,7 @@ export async function onRequestPost(context: {
 
     if (upstream.ok) {
       const { data } = upstreamBody as { data: CVmAgentReturnObject };
-      return jsonResponse({ success: true, data }, 200);
+      return jsonResponse({ success: true, mode: "direct", data }, 200);
     }
 
     return jsonResponse(

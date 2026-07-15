@@ -49,7 +49,7 @@ describe("ProjectedSizingCard", () => {
 
   it("renders both ghost placeholders", () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     render(
@@ -84,7 +84,7 @@ describe("ProjectedSizingCard", () => {
 
   it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     render(
@@ -102,7 +102,7 @@ describe("ProjectedSizingCard", () => {
 
   it("labels the compute/network section as Proxy Compute, distinct from repo storage sizing above it", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     render(
@@ -120,7 +120,7 @@ describe("ProjectedSizingCard", () => {
 
   it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, data: mockData }),
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
     );
 
     render(
@@ -152,7 +152,9 @@ describe("ProjectedSizingCard", () => {
 
   it("shows the error banner and keeps last-good data visible beneath it", async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(jsonResponse({ success: true, data: mockData }))
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, mode: "direct", data: mockData }),
+      )
       .mockResolvedValueOnce(
         jsonResponse(
           { success: false, error: "Upstream sizing API unreachable" },

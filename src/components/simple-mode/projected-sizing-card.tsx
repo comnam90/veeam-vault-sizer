@@ -30,6 +30,7 @@ export function ProjectedSizingCard({
     workloadData.sourceSizeTB,
     workloadData.dataReductionPercent,
   );
+  const directData = data?.mode === "direct" ? data.data : null;
 
   return (
     <Card>
@@ -57,14 +58,18 @@ export function ProjectedSizingCard({
             {error}
           </div>
         ) : null}
-        <StorageBreakdown data={data} />
+        <StorageBreakdown data={directData} />
         <div className="flex flex-col gap-2">
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             Proxy Compute
           </p>
-          <InfrastructureTelemetry compute={data?.proxyCompute?.compute} />
+          <InfrastructureTelemetry
+            compute={directData?.proxyCompute?.compute}
+          />
           <NetworkBandwidth
-            nightlyIncremental={data?.proxyCompute?.compute?.networkThroughput}
+            nightlyIncremental={
+              directData?.proxyCompute?.compute?.networkThroughput
+            }
             initialFullRestore={initialFullRestore}
           />
         </div>

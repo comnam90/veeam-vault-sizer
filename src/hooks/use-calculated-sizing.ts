@@ -4,14 +4,14 @@ import { validateRepositoryConfig } from "@/lib/simple-mode/validate-repository-
 import { validateWorkloadData } from "@/lib/simple-mode/validate-workload-data";
 import type {
   RepositoryConfigValues,
+  SizerResult,
   WorkloadDataValues,
 } from "@/types/simple-mode";
-import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
 const DEBOUNCE_MS = 500;
 
 interface CalculatedSizing {
-  data: CVmAgentReturnObject | null;
+  data: SizerResult | null;
   isLoading: boolean;
   error: string | null;
 }

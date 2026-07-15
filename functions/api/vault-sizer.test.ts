@@ -42,7 +42,11 @@ describe("onRequestPost", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ success: true, data: { totalStorageTB: 18.4 } });
+    expect(body).toEqual({
+      success: true,
+      mode: "direct",
+      data: { totalStorageTB: 18.4 },
+    });
 
     const [url, init] = vi.mocked(fetch).mock.calls[0];
     expect(url).toBe("https://calculator.veeam.com/vse/api/VmAgent");
