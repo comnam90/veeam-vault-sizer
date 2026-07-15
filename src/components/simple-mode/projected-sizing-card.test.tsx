@@ -263,14 +263,44 @@ describe("ProjectedSizingCard", () => {
     );
     // 24576 GB + 18841 GB = 43417 GB => 42.4 TB combined.
     expect(screen.getByText("42.4 TB")).toBeInTheDocument();
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
+    expect(screen.getByText("Secondary Repository")).toBeInTheDocument();
+    // Default copy config: primary hardened-repository, secondary vault-azure,
+    // both on the Performance tier (the only tier either side has enabled).
     expect(
-      screen.getByText("Primary — On-Premises Landing Zone"),
+      screen.getByText("Performance — Hardened Repository"),
     ).toBeInTheDocument();
+    expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument();
+    // Subline: primary 24576 GB / 1024 = 24.0 TB; secondary is the residual
+    // from the rounded combined/primary figures, not its own rounding.
     expect(
-      screen.getByText("Secondary — Offsite Cloud Vault"),
+      screen.getByText("Primary 24.0 TB + Secondary 18.4 TB"),
     ).toBeInTheDocument();
-    // Default copy config: primary hardened-repository, secondary vault-azure.
-    expect(screen.getByText("Hardened Repository")).toBeInTheDocument();
-    expect(screen.getByText("Vault Azure")).toBeInTheDocument();
+  });
+
+  it("titles the direct-mode section Primary Repository with its target's tier label", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // Wait on the data-dependent tier label rather than the static title:
+    // "Primary Repository" is present from the very first (pre-fetch) render
+    // since it doesn't depend on data, so waiting on it resolves immediately
+    // without giving the in-flight fetch's microtask a chance to flush,
+    // racing the assertion below. "Performance — Vault Azure" only appears
+    // once data has loaded, so waiting on it guarantees the loaded render.
+    await vi.waitFor(() =>
+      expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument(),
+    );
+    // DEFAULT_REPOSITORY_CONFIG_VALUES.targetRepository is "vault-azure".
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
   });
 });

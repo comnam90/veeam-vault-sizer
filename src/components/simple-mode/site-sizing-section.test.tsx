@@ -21,21 +21,20 @@ const siteData: CVmAgentReturnObject = {
 };
 
 describe("SiteSizingSection", () => {
-  it("renders the title, badge, storage tier, proxy compute, and nightly bandwidth", () => {
+  it("renders the title, per-tier label, proxy compute, and nightly bandwidth", () => {
     render(
       <SiteSizingSection
-        title="Primary — On-Premises Landing Zone"
-        badge="Hardened Repository"
+        title="Primary Repository"
+        tierLabels={{ performance: "Hardened Repository" }}
         data={siteData}
         initialFullRestore={{ inboundMBps: 200, outboundMBps: 100 }}
       />,
     );
 
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
     expect(
-      screen.getByText("Primary — On-Premises Landing Zone"),
+      screen.getByText("Performance — Hardened Repository"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Hardened Repository")).toBeInTheDocument();
-    expect(screen.getByText("Performance")).toBeInTheDocument();
 
     // Proxy compute reads proxyCompute (8 / 32 GB), not repoCompute (4 / 16).
     expect(screen.getByText("8")).toBeInTheDocument();
@@ -47,5 +46,23 @@ describe("SiteSizingSection", () => {
       .closest("tr");
     expect(nightlyRow).not.toBeNull();
     expect(within(nightlyRow!).getByText("400.0 Mbps")).toBeInTheDocument();
+  });
+
+  it("renders the placeholder state without throwing when data is null", () => {
+    render(
+      <SiteSizingSection
+        title="Primary Repository"
+        tierLabels={{ performance: "Vault Azure" }}
+        data={null}
+        initialFullRestore={null}
+      />,
+    );
+
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
+    // Multiple placeholders render "—" when data is null: StorageBreakdown's
+    // total, InfrastructureTelemetry's Cores/RAM, and NetworkBandwidth's two
+    // rows — so assert at least one exists rather than a single unique match.
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Performance/)).not.toBeInTheDocument();
   });
 });

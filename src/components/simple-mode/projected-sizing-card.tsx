@@ -2,11 +2,11 @@ import { LoaderCircle, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCalculatedSizing } from "@/hooks/use-calculated-sizing";
 import { calculateInitialFullBandwidth } from "@/lib/simple-mode/calculate-initial-full-bandwidth";
-import { getTotalStorageGB } from "@/lib/simple-mode/storage-tiers";
+import {
+  getTargetTierLabels,
+  getTotalStorageGB,
+} from "@/lib/simple-mode/storage-tiers";
 import { ForecastHorizonControl } from "./forecast-horizon-control";
-import { StorageBreakdown } from "./storage-breakdown";
-import { InfrastructureTelemetry } from "./infrastructure-telemetry";
-import { NetworkBandwidth } from "./network-bandwidth";
 import { SiteSizingSection } from "./site-sizing-section";
 import {
   REPO_TYPE_LABEL,
@@ -37,10 +37,30 @@ export function ProjectedSizingCard({
   const directData = data?.mode === "direct" ? data.data : null;
   const copyData = data?.mode === "copy" ? data : null;
 
-  const secondaryBadge =
-    repositoryConfig.targetRepository === "sobr"
-      ? `SOBR · ${REPO_TYPE_LABEL[repositoryConfig.sobr.performanceType]}`
-      : REPO_TYPE_LABEL[repositoryConfig.targetRepository];
+  // Shared by Direct mode's single target and Copy mode's Secondary — both
+  // dispatch on the same targetRepository/sobr shape.
+  const targetTierLabels = getTargetTierLabels(
+    repositoryConfig.targetRepository,
+    repositoryConfig.sobr,
+  );
+
+  // Rounded once here so the headline and subline always sum consistently
+  // — the subline's second figure is a residual, not its own rounding.
+  let combinedTBDisplay = "";
+  let primaryTBDisplay = "";
+  let secondaryTBDisplay = "";
+  if (copyData) {
+    const combinedTB =
+      (getTotalStorageGB(copyData.primary) +
+        getTotalStorageGB(copyData.secondary)) /
+      1024;
+    const primaryTB = getTotalStorageGB(copyData.primary) / 1024;
+    combinedTBDisplay = combinedTB.toFixed(1);
+    primaryTBDisplay = primaryTB.toFixed(1);
+    secondaryTBDisplay = (
+      Number(combinedTBDisplay) - Number(primaryTBDisplay)
+    ).toFixed(1);
+  }
 
   return (
     <Card>
@@ -76,52 +96,35 @@ export function ProjectedSizingCard({
                 Combined Required Storage
               </p>
               <p className="font-mono text-3xl font-semibold">
-                {(
-                  (getTotalStorageGB(copyData.primary) +
-                    getTotalStorageGB(copyData.secondary)) /
-                  1024
-                ).toFixed(1)}{" "}
-                TB
+                {combinedTBDisplay} TB
               </p>
               <p className="text-muted-foreground text-xs">
-                On-Premises{" "}
-                {(getTotalStorageGB(copyData.primary) / 1024).toFixed(1)} TB
-                {" + "}
-                Offsite Vault{" "}
-                {(getTotalStorageGB(copyData.secondary) / 1024).toFixed(1)} TB
+                Primary {primaryTBDisplay} TB{" + "}
+                Secondary {secondaryTBDisplay} TB
               </p>
             </div>
             <SiteSizingSection
-              title="Primary — On-Premises Landing Zone"
-              badge={REPO_TYPE_LABEL[repositoryConfig.primary.repoType]}
+              title="Primary Repository"
+              tierLabels={{
+                performance: REPO_TYPE_LABEL[repositoryConfig.primary.repoType],
+              }}
               data={copyData.primary}
               initialFullRestore={initialFullRestore}
             />
             <SiteSizingSection
-              title="Secondary — Offsite Cloud Vault"
-              badge={secondaryBadge}
+              title="Secondary Repository"
+              tierLabels={targetTierLabels}
               data={copyData.secondary}
               initialFullRestore={initialFullRestore}
             />
           </>
         ) : (
-          <>
-            <StorageBreakdown data={directData} />
-            <div className="flex flex-col gap-2">
-              <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                Proxy Compute
-              </p>
-              <InfrastructureTelemetry
-                compute={directData?.proxyCompute?.compute}
-              />
-              <NetworkBandwidth
-                nightlyIncremental={
-                  directData?.proxyCompute?.compute?.networkThroughput
-                }
-                initialFullRestore={initialFullRestore}
-              />
-            </div>
-          </>
+          <SiteSizingSection
+            title="Primary Repository"
+            tierLabels={targetTierLabels}
+            data={directData}
+            initialFullRestore={initialFullRestore}
+          />
         )}
 
         <div
