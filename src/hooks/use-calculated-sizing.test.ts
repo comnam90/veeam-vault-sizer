@@ -4,6 +4,7 @@ import { useCalculatedSizing } from "./use-calculated-sizing";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
   DEFAULT_WORKLOAD_DATA_VALUES,
+  type RepositoryConfigValues,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
@@ -69,11 +70,12 @@ describe("useCalculatedSizing", () => {
       }),
     );
 
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    };
     const { result } = renderHook(() =>
-      useCalculatedSizing(DEFAULT_WORKLOAD_DATA_VALUES, {
-        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
-        backupPath: "copy",
-      }),
+      useCalculatedSizing(DEFAULT_WORKLOAD_DATA_VALUES, copyConfig),
     );
 
     await vi.waitFor(() =>
