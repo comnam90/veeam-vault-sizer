@@ -19,9 +19,7 @@ export function SiteSizingSection({
 }: SiteSizingSectionProps) {
   return (
     <div className="border-border flex flex-col gap-3 rounded-lg border p-4">
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold">{title}</h3>
-      </div>
+      <h3 className="text-sm font-semibold">{title}</h3>
       <StorageBreakdown data={data} tierLabels={tierLabels} />
       <div className="flex flex-col gap-2">
         <p className="text-muted-foreground text-xs tracking-wide uppercase">

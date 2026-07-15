@@ -13,11 +13,32 @@ import {
   type RepositoryConfigValues,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
+import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
 interface ProjectedSizingCardProps {
   workloadData: WorkloadDataValues;
   repositoryConfig: RepositoryConfigValues;
   onChange: (value: WorkloadDataValues) => void;
+}
+
+// Rounded once here so the headline and subline always sum consistently
+// (D14) — the subline's secondary figure is a residual against the rounded
+// combined/primary figures, not independently rounded from raw GB.
+function computeCopyModeTotals(copyData: {
+  primary: CVmAgentReturnObject | null;
+  secondary: CVmAgentReturnObject | null;
+}) {
+  const combinedTB =
+    (getTotalStorageGB(copyData.primary) +
+      getTotalStorageGB(copyData.secondary)) /
+    1024;
+  const primaryTB = getTotalStorageGB(copyData.primary) / 1024;
+  const combinedTBDisplay = combinedTB.toFixed(1);
+  const primaryTBDisplay = primaryTB.toFixed(1);
+  const secondaryTBDisplay = (
+    Number(combinedTBDisplay) - Number(primaryTBDisplay)
+  ).toFixed(1);
+  return { combinedTBDisplay, primaryTBDisplay, secondaryTBDisplay };
 }
 
 export function ProjectedSizingCard({
@@ -44,23 +65,9 @@ export function ProjectedSizingCard({
     repositoryConfig.sobr,
   );
 
-  // Rounded once here so the headline and subline always sum consistently
-  // — the subline's second figure is a residual, not its own rounding.
-  let combinedTBDisplay = "";
-  let primaryTBDisplay = "";
-  let secondaryTBDisplay = "";
-  if (copyData) {
-    const combinedTB =
-      (getTotalStorageGB(copyData.primary) +
-        getTotalStorageGB(copyData.secondary)) /
-      1024;
-    const primaryTB = getTotalStorageGB(copyData.primary) / 1024;
-    combinedTBDisplay = combinedTB.toFixed(1);
-    primaryTBDisplay = primaryTB.toFixed(1);
-    secondaryTBDisplay = (
-      Number(combinedTBDisplay) - Number(primaryTBDisplay)
-    ).toFixed(1);
-  }
+  const { combinedTBDisplay, primaryTBDisplay, secondaryTBDisplay } = copyData
+    ? computeCopyModeTotals(copyData)
+    : { combinedTBDisplay: "", primaryTBDisplay: "", secondaryTBDisplay: "" };
 
   return (
     <Card>
