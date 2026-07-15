@@ -130,7 +130,7 @@ describe("buildVmAgentRequest", () => {
     expect(result.storageType).toBe("object");
     expect(result.immutablePerf).toBe(true);
     expect(result.immutablePerfDays).toBe(45);
-    expect(result.blockGenerationDays).toBe(10); // vault-aws
+    expect(result.blockGenerationDays).toBe(30); // vault-aws
     expect(result.moveCapacityTierEnabled).toBe(false);
     expect(result.copyCapacityTierEnabled).toBe(false);
     expect(result.archiveTierEnabled).toBe(false);

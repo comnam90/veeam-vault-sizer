@@ -129,10 +129,11 @@ export function repoTypeCanFeedArchiveTier(type: RepoType): boolean {
 
 // Object-storage-only immutability batching window (Block Generation).
 // Block/File types are absent — they enforce immutability natively, no
-// Block Generation concept applies.
+// Block Generation concept applies. Vault Azure and Vault AWS differ (10 vs
+// 30) despite sharing a Vault label — see ADR-0020.
 export const BLOCK_GENERATION_DAYS: Partial<Record<RepoType, number>> = {
   "vault-azure": 10,
-  "vault-aws": 10,
+  "vault-aws": 30,
   "azure-blob": 10,
   "s3-compatible": 10,
   "aws-s3": 30,
