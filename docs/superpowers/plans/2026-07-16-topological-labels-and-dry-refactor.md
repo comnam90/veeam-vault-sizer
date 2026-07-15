@@ -130,7 +130,7 @@ git commit -m "refactor: extract buildTargetInputs to dedupe target/SOBR routing
 
 Both files currently only ever mock `mode: "direct"` responses (D16). Add one copy-mode case to each — pure test additions, no production code changes.
 
-- [ ] **Step 1: Add the copy-mode test to `vault-sizer-client.test.ts`**
+- [x] **Step 1: Add the copy-mode test to `vault-sizer-client.test.ts`**
 
 Add this `it` block inside the existing `describe("callVaultSizerApi", ...)`, after the "POSTs workloadData..." test:
 
@@ -169,7 +169,7 @@ it("returns the copy-mode primary/secondary data unmutated", async () => {
 });
 ```
 
-- [ ] **Step 2: Add the copy-mode test to `use-calculated-sizing.test.ts`**
+- [x] **Step 2: Add the copy-mode test to `use-calculated-sizing.test.ts`**
 
 Add this `it` block inside the existing `describe("useCalculatedSizing", ...)`, after the "fires immediately on mount..." test:
 
@@ -211,7 +211,7 @@ it("settles a copy-mode payload into state, with loading/error behaving like dir
 });
 ```
 
-- [ ] **Step 3: Run both test files to verify they pass**
+- [x] **Step 3: Run both test files to verify they pass**
 
 Run: `npx vitest run src/lib/api/vault-sizer-client.test.ts src/hooks/use-calculated-sizing.test.ts`
 Expected: PASS — both new copy-mode cases pass against the existing (unchanged) client/hook implementation.
@@ -219,12 +219,19 @@ Expected: PASS — both new copy-mode cases pass against the existing (unchanged
 Then run the full suite: `npm run test:run`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/lib/api/vault-sizer-client.test.ts src/hooks/use-calculated-sizing.test.ts
 git commit -m "test: cover copy-mode responses in the sizer client and hook" -m "Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
+
+**Post-hoc fix (commit `15142f6`):** the hook test's copy-mode `repositoryConfig` was
+originally an inline literal inside the `renderHook` callback, creating a new reference
+every render and triggering an infinite `useEffect` loop against
+`useCalculatedSizing`'s `[workloadData, repositoryConfig]` deps. Fixed by hoisting to a
+`const copyConfig: RepositoryConfigValues = {...}`. Verified via independent spec review
+and code quality review (Approved with minor comments, no Critical/Important issues).
 
 ---
 
@@ -237,7 +244,7 @@ git commit -m "test: cover copy-mode responses in the sizer client and hook" -m 
 
 New pure function deriving per-tier technology labels from a target/SOBR config (D12) — the same dispatch Direct mode's single target and Copy mode's Secondary already share.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `src/lib/simple-mode/storage-tiers.test.ts`, change the first import line from:
 
@@ -305,12 +312,12 @@ describe("getTargetTierLabels", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/lib/simple-mode/storage-tiers.test.ts`
 Expected: FAIL — `getTargetTierLabels` is not exported / not a function.
 
-- [ ] **Step 3: Add `TierLabels` and `getTargetTierLabels` to `storage-tiers.ts`**
+- [x] **Step 3: Add `TierLabels` and `getTargetTierLabels` to `storage-tiers.ts`**
 
 Change the top-of-file import to also pull in the repo-type helpers and target config types:
 
@@ -349,7 +356,7 @@ export function getTargetTierLabels(
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/lib/simple-mode/storage-tiers.test.ts`
 Expected: PASS.
@@ -375,7 +382,7 @@ git commit -m "feat: add getTargetTierLabels for per-tier technology labels" -m 
 
 When present, each tier row's label gets a `" — "` suffix from the matching `tierLabels` entry (D11); omitted (or missing a key) falls back to the bare tier label — fully backward compatible with every existing caller/test.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add this `it` block inside `describe("StorageBreakdown", ...)` in `storage-breakdown.test.tsx`, before its closing `});`:
 
@@ -404,12 +411,12 @@ Add this `it` block inside `describe("StorageBreakdown", ...)` in `storage-break
   });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/components/simple-mode/storage-breakdown.test.tsx`
 Expected: FAIL — `tierLabels` prop doesn't exist yet; the labeled-row assertions don't find matching text.
 
-- [ ] **Step 3: Add the `tierLabels` prop**
+- [x] **Step 3: Add the `tierLabels` prop**
 
 In `src/components/simple-mode/storage-breakdown.tsx`, update the import and props:
 
@@ -440,7 +447,7 @@ Change the tier row's label rendering from `<span>{tier.label}</span>` to:
 </span>
 ```
 
-- [ ] **Step 4: Run the full test file to verify all pass**
+- [x] **Step 4: Run the full test file to verify all pass**
 
 Run: `npx vitest run src/components/simple-mode/storage-breakdown.test.tsx`
 Expected: PASS — existing tests (no `tierLabels` passed, unchanged rendering) plus both new cases.
@@ -448,7 +455,7 @@ Expected: PASS — existing tests (no `tierLabels` passed, unchanged rendering) 
 Then run the full suite: `npm run test:run`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/simple-mode/storage-breakdown.tsx src/components/simple-mode/storage-breakdown.test.tsx
@@ -470,7 +477,7 @@ git commit -m "feat: StorageBreakdown appends per-tier technology labels" -m "Co
 
 `data` becomes `CVmAgentReturnObject | null` (Direct mode has no data until the first response lands — D13); `badge: string` is replaced by `tierLabels: TierLabels`, passed through to `StorageBreakdown`. Direct mode collapses to one `SiteSizingSection`, deleting the duplicate flat-layout JSX (D13). Both modes get topological titles (D11). The combined-header subline drops geographic wording and derives its second figure from the already-rounded headline/primary figures so the two numbers always sum consistently — this makes headline and subline internally consistent; it does not make the subline's "Secondary" figure agree with that section's own independently-rounded `StorageBreakdown` total in every case, which can still differ by up to 0.1 TB at a rounding boundary (D14).
 
-- [ ] **Step 1: Write the failing test (full rewrite)**
+- [x] **Step 1: Write the failing test (full rewrite)**
 
 Replace the entire contents of `src/components/simple-mode/site-sizing-section.test.tsx` with:
 
@@ -542,7 +549,7 @@ describe("SiteSizingSection", () => {
 });
 ```
 
-- [ ] **Step 2: Update `projected-sizing-card.test.tsx`'s assertions**
+- [x] **Step 2: Update `projected-sizing-card.test.tsx`'s assertions**
 
 Change the copy-mode test's assertions (in `"renders the split canvas with a combined total and both site sections in copy mode"`):
 
@@ -600,12 +607,12 @@ Add this `it` block after the copy-mode test, to cover Direct mode's new title:
   });
 ```
 
-- [ ] **Step 3: Run both test files to confirm they fail against the current implementation**
+- [x] **Step 3: Run both test files to confirm they fail against the current implementation**
 
 Run: `npx vitest run src/components/simple-mode/site-sizing-section.test.tsx src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: FAIL — `SiteSizingSection` still requires a `badge` prop and a non-null `data` (the null-data case throws on `data.proxyCompute`); `ProjectedSizingCard` still renders the old geographic titles/flat layout and the old badge-based assertions no longer match.
 
-- [ ] **Step 4: Rewrite `site-sizing-section.tsx`**
+- [x] **Step 4: Rewrite `site-sizing-section.tsx`**
 
 Replace the entire contents of `src/components/simple-mode/site-sizing-section.tsx` with:
 
@@ -650,7 +657,7 @@ export function SiteSizingSection({
 }
 ```
 
-- [ ] **Step 5: Rewrite `projected-sizing-card.tsx`**
+- [x] **Step 5: Rewrite `projected-sizing-card.tsx`**
 
 Replace the entire contents of `src/components/simple-mode/projected-sizing-card.tsx` with:
 
@@ -798,12 +805,12 @@ export function ProjectedSizingCard({
 }
 ```
 
-- [ ] **Step 6: Run both test files to verify they pass**
+- [x] **Step 6: Run both test files to verify they pass**
 
 Run: `npx vitest run src/components/simple-mode/site-sizing-section.test.tsx src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: PASS — `SiteSizingSection`'s two cases (with data, with null data) and `ProjectedSizingCard`'s full set (title/layout assertions updated in Step 2, the updated copy-mode test, and the new direct-mode title test).
 
-- [ ] **Step 7: Full verification**
+- [x] **Step 7: Full verification**
 
 Run: `npm run test:run`
 Expected: PASS — entire suite.
@@ -814,12 +821,14 @@ Expected: PASS — typecheck + build (this is the check that would have caught a
 Run: `npm run lint`
 Expected: PASS — no lint errors (in particular, no unused imports left in `projected-sizing-card.tsx` from the deleted flat-layout branch — `StorageBreakdown`, `InfrastructureTelemetry`, and `NetworkBandwidth` are no longer imported directly here).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/components/simple-mode/site-sizing-section.tsx src/components/simple-mode/site-sizing-section.test.tsx src/components/simple-mode/projected-sizing-card.tsx src/components/simple-mode/projected-sizing-card.test.tsx
 git commit -m "feat: unify Projected Sizing canvas on SiteSizingSection, drop geographic titles" -m "Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
+
+**Outcome:** implemented as commit `0ed70a4`. Spec-compliance review: ✅ compliant (all 4 files match, zero remaining geographic wording, both implementer-reported test deviations — the 5-dashes `getAllByText` change and the reordered `vi.waitFor` in the new direct-mode test — independently confirmed as genuine necessities, not corner-cutting). Code-quality review: ✅ approved with two non-blocking minor comments (a vestigial flex wrapper around the section `<h3>`, and the copy-mode totals math read as more imperative than the codebase's style). Both addressed directly in follow-up commit `cdc2160` (collapsed the wrapper; extracted `computeCopyModeTotals` and restored the D14 comment reference). Re-verified after that commit: 260/260 tests, clean `tsc --noEmit`, clean lint.
 
 ---
 
@@ -827,7 +836,7 @@ git commit -m "feat: unify Projected Sizing canvas on SiteSizingSection, drop ge
 
 After Task 5, run the app (`npm run dev`, which starts `wrangler pages dev` — hit the printed `:8788` URL, not a bare Vite `:5173` dev server, since the BFF function needs the Workers runtime) and:
 
-1. **Direct to Vault**, Vault Azure target: confirm the single section is titled "Primary Repository" and its Performance row reads "Performance — Vault Azure".
-2. Switch to **Backup Copy to Vault**: confirm the combined header reads "Combined Required Storage" with a "Primary X TB + Secondary Y TB" subline (no "On-Premises"/"Offsite" wording anywhere), and the two sections are titled "Primary Repository" / "Secondary Repository" with per-tier labels instead of a single badge.
-3. Enable **SOBR** as the target with Capacity Tier on: confirm the Secondary (or Direct) section shows both "Performance — {type}" and "Capacity — {type}" rows, and that Archive Tier (if also enabled) renders as bare "Archive" with no suffix.
-4. Confirm the initial page load (before the first response settles) renders the "Primary Repository" section with `StorageBreakdown`'s "—" placeholder, not a crash — this is the null-safety fix from Task 5.
+1. [x] **Direct to Vault**, Vault Azure target: confirm the single section is titled "Primary Repository" and its Performance row reads "Performance — Vault Azure". — Confirmed live: single "Primary Repository" section, "Performance — Vault Azure" row.
+2. [x] Switch to **Backup Copy to Vault**: confirm the combined header reads "Combined Required Storage" with a "Primary X TB + Secondary Y TB" subline (no "On-Premises"/"Offsite" wording anywhere), and the two sections are titled "Primary Repository" / "Secondary Repository" with per-tier labels instead of a single badge. — Confirmed live: "Combined Required Storage" / "48.4 TB" / "Primary 26.6 TB + Secondary 21.8 TB", sections titled "Primary Repository" ("Performance — Hardened Repository") and "Secondary Repository" ("Performance — Vault Azure"). No geographic wording anywhere in the page text.
+3. [x] Enable **SOBR** as the target with Capacity Tier on: confirm the Secondary (or Direct) section shows both "Performance — {type}" and "Capacity — {type}" rows, and that Archive Tier (if also enabled) renders as bare "Archive" with no suffix. — Confirmed live: Secondary Repository section showed "Performance — Vault Azure", "Capacity — Vault Azure", and bare "Archive" (no suffix) with Capacity + Archive tiers both enabled.
+4. [x] Confirm the initial page load (before the first response settles) renders the "Primary Repository" section with `StorageBreakdown`'s "—" placeholder, not a crash — this is the null-safety fix from Task 5. — Not independently reproducible by hand against the local dev server (the BFF round-trip resolves faster than a manual navigate+extract can observe), but this exact path is covered by two passing automated tests reviewed and re-verified above: `SiteSizingSection`'s null-data test and `ProjectedSizingCard`'s loading-indicator test.
