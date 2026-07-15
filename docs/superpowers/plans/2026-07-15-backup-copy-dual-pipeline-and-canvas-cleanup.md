@@ -30,6 +30,8 @@
 
 **Commands:** single file → `npx vitest run <path>`; full suite → `npm run test:run`; typecheck+build → `npm run build`; lint → `npm run lint`.
 
+**Per-task verification (applies to every task):** after the targeted single-file run passes, also run the **full suite** (`npm run test:run`) before committing. Several tasks mutate shared modules whose regression coverage lives in _other_ test files — e.g. `functions/api/vault-sizer.test.ts` exercises the real request builder through `onRequestPost`, and `projected-sizing-card.test.tsx` renders `StorageBreakdown`. A single-file run would miss a cross-file regression until a later task, making it hard to bisect. Only treat a task as green when the whole suite passes.
+
 **Every commit ends with the trailer** `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`. Commit subjects follow conventional-commit format (`feat:`/`refactor:`/`test:`) and body lines stay ≤100 chars (a commit-msg hook enforces this).
 
 ---
@@ -401,6 +403,9 @@ export function buildCopyVmAgentRequests(
 Run: `npx vitest run src/lib/simple-mode/build-vm-agent-request.test.ts`
 Expected: PASS — the existing direct-mode tests (regression guard for byte-identical output) and the new `buildCopyVmAgentRequests` tests all pass. The existing `throws for Backup Copy, naming ADR-0007` test still passes (the new message still contains "ADR-0007").
 
+Then run the full suite: `npm run test:run`
+Expected: PASS — in particular `functions/api/vault-sizer.test.ts`, which drives the real builder through `onRequestPost` and independently guards byte-identical direct output (`sentBody.sourceTB`, `sentBody.objectStorage`), stays green.
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -678,6 +683,9 @@ export function StorageBreakdown({ data }: StorageBreakdownProps) {
 Run: `npx vitest run src/components/simple-mode/storage-breakdown.test.tsx`
 Expected: PASS — existing tests (unchanged rendering) plus the new zero-tier test.
 
+Then run the full suite: `npm run test:run`
+Expected: PASS — in particular `projected-sizing-card.test.tsx`, which renders `StorageBreakdown` and asserts `18.4 TB`, stays green (its non-zero fixture is unaffected by the `> 0` filter).
+
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -862,6 +870,9 @@ expect(body).toEqual({
 
 Run: `npx vitest run functions/api/vault-sizer.test.ts src/lib/api/vault-sizer-client.test.ts src/hooks/use-calculated-sizing.test.ts src/components/simple-mode/projected-sizing-card.test.tsx`
 Expected: PASS (copy still returns 400 via the retained throw; the existing "rejects Backup Copy" worker test still passes).
+
+Run: `npm run test:run`
+Expected: PASS — full suite green after the contract migration.
 
 Run: `npm run build`
 Expected: PASS — `tsc -b` typechecks the whole project with the new union (no dangling references to the old `{ success, data }` shape).
@@ -1640,4 +1651,4 @@ After Task 7, run the app (`npm run dev`, then open the proxied URL) and:
 2. Switch to **Backup Copy to Vault**. Confirm the canvas splits into the master "Combined Required Storage" header plus Primary (On-Premises) and Secondary (Offsite Cloud Vault) sections, each with its own storage bars, Cores/RAM, and both bandwidth rows.
 3. Set the Primary to a Hardened Repository and confirm its section shows only a Performance bar and the badge reads "Hardened Repository".
 4. **Semantic eyeball (spec assumption):** confirm the Primary section's "Nightly Incremental" / "Initial Full / Restore" numbers read sensibly for an on-prem repo (outbound = repo-write rate). Note any oddity for follow-up; not a blocker.
-5. Force a Secondary error (e.g. a Vault target with retention below the 30-day floor is blocked client-side; instead temporarily point the Secondary at a config the upstream rejects) and confirm the whole canvas shows one side-labeled error banner, not a partial estimate.
+5. **Fail-whole (if you can induce an upstream failure):** most bad configs are blocked client-side before any call, so to exercise the worker's fail-whole path, temporarily make one side's upstream call fail — e.g. edit `VAULT_SIZER_API_URL` in `functions/api/vault-sizer.ts` to a bad host, or have the copy handler's Secondary build send a value the calculator rejects. Confirm the canvas shows a single side-labeled error banner (naming Primary or Secondary), not a partial estimate. Revert the temporary change afterward.
