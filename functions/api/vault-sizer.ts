@@ -74,6 +74,10 @@ export async function onRequestPost(context: {
     return jsonResponse({ success: false, error: "Invalid JSON body" }, 400);
   }
 
+  if (!bffRequest?.repositoryConfig) {
+    return jsonResponse({ success: false, error: "Invalid request body" }, 400);
+  }
+
   if (bffRequest.repositoryConfig.backupPath === "copy") {
     return handleCopy(bffRequest);
   }

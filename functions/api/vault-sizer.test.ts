@@ -306,4 +306,22 @@ describe("onRequestPost", () => {
     expect(response.status).toBe(400);
     expect(body).toEqual({ success: false, error: "Invalid JSON body" });
   });
+
+  it("returns 400 for a request body missing repositoryConfig", async () => {
+    const response = await onRequestPost(postRequest({}));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ success: false, error: "Invalid request body" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 for a null request body", async () => {
+    const response = await onRequestPost(postRequest(null));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ success: false, error: "Invalid request body" });
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });
