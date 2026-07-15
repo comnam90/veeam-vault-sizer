@@ -16,6 +16,11 @@ function postRequest(body: unknown): { request: Request } {
   };
 }
 
+const copyConfig: RepositoryConfigValues = {
+  ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+  backupPath: "copy",
+};
+
 describe("onRequestPost", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -148,11 +153,53 @@ describe("onRequestPost", () => {
     });
   });
 
-  it("rejects Backup Copy requests before calling upstream", async () => {
-    const copyConfig: RepositoryConfigValues = {
-      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
-      backupPath: "copy",
-    };
+  it("fans a copy request out into two upstream calls and aggregates both", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 24 } }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 18.4 } }),
+          { status: 200 },
+        ),
+      );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      success: true,
+      mode: "copy",
+      primary: { totalStorageTB: 24 },
+      secondary: { totalStorageTB: 18.4 },
+    });
+  });
+
+  it("fails whole with a Primary-labeled error when the Primary sizing fails", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: false, messages: ["primary boom"] }),
+          { status: 400 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 18.4 } }),
+          { status: 200 },
+        ),
+      );
 
     const response = await onRequestPost(
       postRequest({
@@ -164,8 +211,86 @@ describe("onRequestPost", () => {
 
     expect(response.status).toBe(400);
     expect(body.success).toBe(false);
-    expect(body.error).toContain("ADR-0007");
-    expect(fetch).not.toHaveBeenCalled();
+    expect(body.error).toContain("Primary (on-premises) sizing failed");
+    expect(body.error).toContain("primary boom");
+  });
+
+  it("fails whole with a Secondary-labeled error when the Secondary sizing fails", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 24 } }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: false, messages: ["secondary boom"] }),
+          { status: 400 },
+        ),
+      );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain("Secondary (offsite Vault) sizing failed");
+    expect(body.error).toContain("secondary boom");
+  });
+
+  it("uses the generic fallback message when a failed side returns a non-JSON body", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response("<html>gateway error</html>", { status: 502 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 18.4 } }),
+          { status: 200 },
+        ),
+      );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body.error).toContain("Primary (on-premises) sizing failed");
+    expect(body.error).toContain("Calculation engine rejected the request");
+  });
+
+  it("returns 502 when a copy upstream call rejects (network failure)", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ success: true, data: { totalStorageTB: 24 } }),
+          { status: 200 },
+        ),
+      )
+      .mockRejectedValueOnce(new Error("network error"));
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body).toEqual({
+      success: false,
+      error: "Upstream sizing API unreachable",
+    });
   });
 
   it("returns 400 for an invalid JSON body", async () => {
