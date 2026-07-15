@@ -97,4 +97,19 @@ describe("StorageBreakdown", () => {
       5,
     );
   });
+
+  it("hides tiers whose volume is present but zero, keeping only non-zero tiers", () => {
+    const data = makeData([
+      { diskGB: 2048, diskPurpose: 3 },
+      { diskGB: 0, diskPurpose: 13 },
+      { diskGB: 0, diskPurpose: 4 },
+    ]);
+    render(<StorageBreakdown data={data} />);
+
+    expect(screen.getByText("Performance")).toBeInTheDocument();
+    expect(screen.queryByText("Capacity")).not.toBeInTheDocument();
+    expect(screen.queryByText("Archive")).not.toBeInTheDocument();
+    // Grand total equals just the Performance tier (2.0 TB), both read the same.
+    expect(screen.getAllByText("2.0 TB")).toHaveLength(2);
+  });
 });
