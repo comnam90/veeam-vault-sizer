@@ -33,7 +33,9 @@ Each is a resolved question from the brainstorm. They win over any looser readin
 
 - **D8 — Repo-type badges in section headers**, derived client-side from `repositoryConfig` (the return object carries no reliable type label).
 
-- **D9 — Part 1 filter uses raw `diskGB > 0`.** Truly-unconfigured tiers come back as exactly `0`, so raw `>0` removes the real noise. The sub-51GB-rounds-to-`0.0` edge case is not a real configured tier. The filter lives in the shared `StorageBreakdown`, so it applies to Direct mode too — intended.
+- **D9 — Part 1 filter uses raw `diskGB > 0`.** Truly-unconfigured tiers come back as exactly `0`, so raw `>0` removes the real noise. The sub-51GB-rounds-to-`0.0` edge case is not a real configured tier. The filter lives in the shared `StorageBreakdown`, so it applies to Direct mode too — intended. (Verified against the live upstream: even a single-tier target returns `dp13`/`dp4` volumes at `0.00 GB`, confirming this is the noise to remove.)
+
+- **D10 — Both pipelines size as independent backup targets; the calculator's copy flags stay at `base` defaults (`backupType: 0`, `copiesEnabled: false`).** Verified empirically against the live VmAgent endpoint (2026-07-15): toggling `backupType` (0/1) and `copiesEnabled` (true/false) produces **byte-identical** responses across every field — `totalStorageTB`, `workspaceGB`, immutability tax, proxy cores/RAM, network throughput (inbound and outbound), repo volumes, and restore-point count — for **both** an object-storage (Vault) and a block/file (Hardened Repository) config. So these two flags are inert for this endpoint; setting `backupType: 1` on the Secondary would not change its numbers, and `copiesEnabled: true` would not double-count. `buildBaseInputs` therefore keeps both flags at their existing defaults for both sub-requests — no per-side flag threading. (Probe scripts were throwaway; not committed.)
 
 ## Architecture
 
