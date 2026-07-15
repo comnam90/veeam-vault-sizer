@@ -1,3 +1,8 @@
+import {
+  REPO_TYPE_LABEL,
+  type RepositoryConfigValues,
+  type TargetRepository,
+} from "@/types/simple-mode";
 import type { CVmAgentReturnObject, Volume } from "@/types/vault-sizer-api";
 
 export interface TierStorageRow {
@@ -54,4 +59,26 @@ export function getTierStorageRows(
 
 export function getTotalStorageGB(data: CVmAgentReturnObject | null): number {
   return getTierStorageRows(data).reduce((sum, tier) => sum + tier.diskGB, 0);
+}
+
+export type TierLabels = Partial<Record<TierStorageRow["key"], string>>;
+
+// Shared by Direct mode's single target and Copy mode's Secondary — both
+// dispatch on the same targetRepository/sobr shape (D12). Archive Tier never
+// gets a label: ArchiveTierConfig has no user-selectable RepoType.
+export function getTargetTierLabels(
+  targetRepository: TargetRepository,
+  sobr: RepositoryConfigValues["sobr"],
+): TierLabels {
+  if (targetRepository !== "sobr") {
+    return { performance: REPO_TYPE_LABEL[targetRepository] };
+  }
+
+  const labels: TierLabels = {
+    performance: REPO_TYPE_LABEL[sobr.performanceType],
+  };
+  if (sobr.capacityTier.enabled) {
+    labels.capacity = REPO_TYPE_LABEL[sobr.capacityTier.type];
+  }
+  return labels;
 }

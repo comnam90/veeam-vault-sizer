@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getTierStorageRows, getTotalStorageGB } from "./storage-tiers";
+import {
+  getTargetTierLabels,
+  getTierStorageRows,
+  getTotalStorageGB,
+} from "./storage-tiers";
+import { DEFAULT_REPOSITORY_CONFIG_VALUES } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
 function makeData(
@@ -74,5 +79,45 @@ describe("getTotalStorageGB", () => {
 
   it("is 0 for null data", () => {
     expect(getTotalStorageGB(null)).toBe(0);
+  });
+});
+
+describe("getTargetTierLabels", () => {
+  it("returns only a performance label for a standalone (non-SOBR) target", () => {
+    expect(
+      getTargetTierLabels("vault-azure", DEFAULT_REPOSITORY_CONFIG_VALUES.sobr),
+    ).toEqual({ performance: "Vault Azure" });
+  });
+
+  it("returns performance-only for a SOBR target with Capacity Tier disabled", () => {
+    const sobr = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+      performanceType: "hardened-repository" as const,
+    };
+    expect(getTargetTierLabels("sobr", sobr)).toEqual({
+      performance: "Hardened Repository",
+    });
+  });
+
+  it("adds a capacity label when Capacity Tier is enabled, and never adds an archive label", () => {
+    const sobr = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+      performanceType: "hardened-repository" as const,
+      capacityTier: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+        enabled: true,
+        type: "vault-azure" as const,
+      },
+      archiveTier: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+        enabled: true,
+      },
+    };
+    const labels = getTargetTierLabels("sobr", sobr);
+    expect(labels).toEqual({
+      performance: "Hardened Repository",
+      capacity: "Vault Azure",
+    });
+    expect(labels.archive).toBeUndefined();
   });
 });
