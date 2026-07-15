@@ -7,8 +7,6 @@ export interface TierStorageRow {
   colorClassName: string;
 }
 
-// diskPurpose codes: 2 = RepoLocal, 3 = RepoObject (both Performance Tier);
-// 13 = Capacity Tier; 4 = Archive Tier. See vault-sizer-api.ts.
 const TIERS = [
   {
     key: "performance",
