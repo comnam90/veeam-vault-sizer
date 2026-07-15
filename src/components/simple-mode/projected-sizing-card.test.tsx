@@ -195,4 +195,82 @@ describe("ProjectedSizingCard", () => {
     );
     expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0);
   });
+
+  it("renders the split canvas with a combined total and both site sections in copy mode", async () => {
+    const primaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          volumes: [{ diskGB: 24576, diskPurpose: 2 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          networkThroughput: { inboundMBps: 20, outboundMBps: 10 },
+        },
+      },
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          volumes: [{ diskGB: 18841, diskPurpose: 3 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          networkThroughput: { inboundMBps: 8, outboundMBps: 4 },
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={{
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        }}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("Combined Required Storage")).toBeInTheDocument(),
+    );
+    // 24576 GB + 18841 GB = 43417 GB => 42.4 TB combined.
+    expect(screen.getByText("42.4 TB")).toBeInTheDocument();
+    expect(
+      screen.getByText("Primary — On-Premises Landing Zone"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Secondary — Offsite Cloud Vault"),
+    ).toBeInTheDocument();
+    // Default copy config: primary hardened-repository, secondary vault-azure.
+    expect(screen.getByText("Hardened Repository")).toBeInTheDocument();
+    expect(screen.getByText("Vault Azure")).toBeInTheDocument();
+  });
 });
