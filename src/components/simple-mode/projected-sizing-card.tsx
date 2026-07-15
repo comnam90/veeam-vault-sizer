@@ -58,11 +58,16 @@ export function ProjectedSizingCard({
           </div>
         ) : null}
         <StorageBreakdown data={data} />
-        <InfrastructureTelemetry compute={data?.proxyCompute?.compute} />
-        <NetworkBandwidth
-          nightlyIncremental={data?.proxyCompute?.compute?.networkThroughput}
-          initialFullRestore={initialFullRestore}
-        />
+        <div className="flex flex-col gap-2">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Proxy Compute
+          </p>
+          <InfrastructureTelemetry compute={data?.proxyCompute?.compute} />
+          <NetworkBandwidth
+            nightlyIncremental={data?.proxyCompute?.compute?.networkThroughput}
+            initialFullRestore={initialFullRestore}
+          />
+        </div>
         <div
           data-testid="projected-sizing-assumptions-placeholder"
           className="border-border h-16 rounded-lg border border-dashed"

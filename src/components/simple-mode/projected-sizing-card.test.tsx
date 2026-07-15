@@ -100,6 +100,24 @@ describe("ProjectedSizingCard", () => {
     expect(screen.getByText("32 GB")).toBeInTheDocument();
   });
 
+  it("labels the compute/network section as Proxy Compute, distinct from repo storage sizing above it", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("Proxy Compute")).toBeInTheDocument(),
+    );
+  });
+
   it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
     vi.mocked(fetch).mockResolvedValue(
       jsonResponse({ success: true, data: mockData }),
