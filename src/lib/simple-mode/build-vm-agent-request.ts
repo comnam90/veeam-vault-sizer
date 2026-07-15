@@ -5,6 +5,7 @@ import {
   repoTypeSupportsBlockCloning,
   type RepositoryConfigValues,
   type RepoType,
+  type TargetRepository,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { VmAgentInputs } from "@/types/vault-sizer-api";
@@ -139,6 +140,19 @@ function buildSobrInputs(
   return result;
 }
 
+// Shared target/SOBR routing — both buildVmAgentRequest's target dispatch and
+// buildCopyVmAgentRequests's Secondary allocation use this (D15).
+function buildTargetInputs(
+  base: VmAgentInputs,
+  targetRepository: TargetRepository,
+  immutableDays: string,
+  sobr: RepositoryConfigValues["sobr"],
+): VmAgentInputs {
+  return targetRepository !== "sobr"
+    ? buildStandaloneRepoInputs(base, targetRepository, immutableDays)
+    : buildSobrInputs(base, sobr);
+}
+
 // Direct mode only. Backup Copy needs two requests — use
 // buildCopyVmAgentRequests (ADR-0007).
 export function buildVmAgentRequest(
@@ -157,15 +171,12 @@ export function buildVmAgentRequest(
     resolveEffectiveRetention(workloadData),
   );
 
-  if (repositoryConfig.targetRepository !== "sobr") {
-    return buildStandaloneRepoInputs(
-      base,
-      repositoryConfig.targetRepository,
-      repositoryConfig.targetRepositoryImmutableDays,
-    );
-  }
-
-  return buildSobrInputs(base, repositoryConfig.sobr);
+  return buildTargetInputs(
+    base,
+    repositoryConfig.targetRepository,
+    repositoryConfig.targetRepositoryImmutableDays,
+    repositoryConfig.sobr,
+  );
 }
 
 // Backup Copy mode: two independent VmAgentInputs (ADR-0007). Primary is a
@@ -193,14 +204,12 @@ export function buildCopyVmAgentRequests(
       repositoryConfig.secondaryRetention,
     ),
   );
-  const secondary =
-    repositoryConfig.targetRepository !== "sobr"
-      ? buildStandaloneRepoInputs(
-          secondaryBase,
-          repositoryConfig.targetRepository,
-          repositoryConfig.targetRepositoryImmutableDays,
-        )
-      : buildSobrInputs(secondaryBase, repositoryConfig.sobr);
+  const secondary = buildTargetInputs(
+    secondaryBase,
+    repositoryConfig.targetRepository,
+    repositoryConfig.targetRepositoryImmutableDays,
+    repositoryConfig.sobr,
+  );
 
   return { primary, secondary };
 }
