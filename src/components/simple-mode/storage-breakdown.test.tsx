@@ -112,4 +112,27 @@ describe("StorageBreakdown", () => {
     // Grand total equals just the Performance tier (2.0 TB), both read the same.
     expect(screen.getAllByText("2.0 TB")).toHaveLength(2);
   });
+
+  it("appends a technology label to a tier row when tierLabels is passed, one row at a time", () => {
+    const data = makeData([
+      { diskGB: 2048, diskPurpose: 3 },
+      { diskGB: 4096, diskPurpose: 13 },
+    ]);
+    render(
+      <StorageBreakdown
+        data={data}
+        tierLabels={{ performance: "Vault Azure", capacity: "Vault AWS" }}
+      />,
+    );
+
+    expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument();
+    expect(screen.getByText("Capacity — Vault AWS")).toBeInTheDocument();
+  });
+
+  it("falls back to the bare tier label when tierLabels is omitted", () => {
+    const data = makeData([{ diskGB: 2048, diskPurpose: 3 }]);
+    render(<StorageBreakdown data={data} />);
+
+    expect(screen.getByText("Performance")).toBeInTheDocument();
+  });
 });

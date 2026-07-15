@@ -2,14 +2,16 @@ import { Progress } from "@/components/ui/progress";
 import {
   getTierStorageRows,
   getTotalStorageGB,
+  type TierLabels,
 } from "@/lib/simple-mode/storage-tiers";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
 interface StorageBreakdownProps {
   data: CVmAgentReturnObject | null;
+  tierLabels?: TierLabels;
 }
 
-export function StorageBreakdown({ data }: StorageBreakdownProps) {
+export function StorageBreakdown({ data, tierLabels }: StorageBreakdownProps) {
   const tierRows = getTierStorageRows(data);
   const totalTB = getTotalStorageGB(data) / 1024;
 
@@ -31,7 +33,11 @@ export function StorageBreakdown({ data }: StorageBreakdownProps) {
             return (
               <div key={tier.key} className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span>{tier.label}</span>
+                  <span>
+                    {tierLabels?.[tier.key]
+                      ? `${tier.label} — ${tierLabels[tier.key]}`
+                      : tier.label}
+                  </span>
                   <span className="font-mono">{tierTB.toFixed(1)} TB</span>
                 </div>
                 <Progress
