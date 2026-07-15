@@ -48,6 +48,39 @@ describe("callVaultSizerApi", () => {
     expect(result).toEqual({ mode: "direct", data: mockData });
   });
 
+  it("returns the copy-mode primary/secondary data unmutated", async () => {
+    const primaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 24,
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 18.4,
+    };
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          mode: "copy",
+          primary: primaryData,
+          secondary: secondaryData,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await callVaultSizerApi(DEFAULT_WORKLOAD_DATA_VALUES, {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    });
+
+    expect(result).toEqual({
+      mode: "copy",
+      primary: primaryData,
+      secondary: secondaryData,
+    });
+  });
+
   it("throws the gateway's error message when success is false", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(

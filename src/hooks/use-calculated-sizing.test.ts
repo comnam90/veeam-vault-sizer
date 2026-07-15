@@ -51,6 +51,42 @@ describe("useCalculatedSizing", () => {
     expect(result.current.error).toBeNull();
   });
 
+  it("settles a copy-mode payload into state, with loading/error behaving like direct mode", async () => {
+    const primaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 24,
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 18.4,
+    };
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useCalculatedSizing(DEFAULT_WORKLOAD_DATA_VALUES, {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+        backupPath: "copy",
+      }),
+    );
+
+    await vi.waitFor(() =>
+      expect(result.current.data).toEqual({
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
   it("collapses rapid consecutive changes into a single fetch call, using the latest values", async () => {
     vi.mocked(fetch).mockResolvedValue(
       jsonResponse({ success: true, mode: "direct", data: mockData }),
