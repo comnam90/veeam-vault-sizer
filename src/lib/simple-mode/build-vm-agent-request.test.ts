@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildVmAgentRequest } from "./build-vm-agent-request";
+import {
+  buildCopyVmAgentRequests,
+  buildVmAgentRequest,
+} from "./build-vm-agent-request";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
   DEFAULT_WORKLOAD_DATA_VALUES,
@@ -278,5 +281,127 @@ describe("buildVmAgentRequest", () => {
     expect(result.blockGenerationDays).toBe(10);
     expect(Object.keys(result)).not.toContain("immutableArchive");
     expect(Object.keys(result)).not.toContain("immutableArchiveDays");
+  });
+});
+
+describe("buildCopyVmAgentRequests", () => {
+  const copyBase: RepositoryConfigValues = {
+    ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+    backupPath: "copy",
+  };
+
+  it("sizes a block/file Primary (Hardened Repository) as non-object storage with Fast Clone", () => {
+    const { primary } = buildCopyVmAgentRequests(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      copyBase,
+    );
+
+    expect(primary.objectStorage).toBe(false);
+    expect(primary.storageType).toBe(null);
+    expect(primary.immutablePerf).toBe(true); // Hardened Repository requires immutability
+    expect(primary.immutablePerfDays).toBe(30); // DEFAULT primary.immutableDays
+    expect(primary.blockCloning).toBe(true); // XFS-backed
+    expect(primary.blockGenerationDays).toBe(0); // no object batching window
+    expect(primary.days).toBe(30); // DEFAULT shortTermRetentionDays
+  });
+
+  it("sizes a Vault Primary as immutable object storage with a block-generation window", () => {
+    const values: RepositoryConfigValues = {
+      ...copyBase,
+      primary: {
+        ...copyBase.primary,
+        repoType: "vault-azure",
+        immutableDays: "40",
+      },
+    };
+
+    const { primary } = buildCopyVmAgentRequests(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      values,
+    );
+
+    expect(primary.objectStorage).toBe(true);
+    expect(primary.storageType).toBe("object");
+    expect(primary.immutablePerf).toBe(true);
+    expect(primary.immutablePerfDays).toBe(40);
+    expect(primary.blockGenerationDays).toBe(10); // vault-azure
+    expect(primary.blockCloning).toBe(false);
+  });
+
+  it("sizes the Secondary Vault target as immutable object storage, like the direct path", () => {
+    const { secondary } = buildCopyVmAgentRequests(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      copyBase,
+    );
+
+    // DEFAULT targetRepository is vault-azure, targetRepositoryImmutableDays "30".
+    expect(secondary.objectStorage).toBe(true);
+    expect(secondary.immutablePerf).toBe(true);
+    expect(secondary.immutablePerfDays).toBe(30);
+    expect(secondary.blockGenerationDays).toBe(10);
+  });
+
+  it("sizes a Secondary SOBR via the same dispatch as the direct SOBR path", () => {
+    const values: RepositoryConfigValues = {
+      ...copyBase,
+      targetRepository: "sobr",
+    };
+
+    const { secondary } = buildCopyVmAgentRequests(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      values,
+    );
+
+    // DEFAULT sobr.performanceType is vault-azure (immutable object), Capacity off.
+    expect(secondary.objectStorage).toBe(true);
+    expect(secondary.immutablePerf).toBe(true);
+    expect(secondary.blockGenerationDays).toBe(10);
+    expect(secondary.archiveTierEnabled).toBe(false);
+  });
+
+  it("resolves each side's retention independently from its own override", () => {
+    const values: RepositoryConfigValues = {
+      ...copyBase,
+      primary: {
+        ...copyBase.primary,
+        retention: {
+          customizeRetention: true,
+          retentionDays: "45",
+          gfsWeekly: "0",
+          gfsMonthly: "0",
+          gfsYearly: "0",
+        },
+      },
+      secondaryRetention: {
+        customizeRetention: true,
+        retentionDays: "60",
+        gfsWeekly: "0",
+        gfsMonthly: "0",
+        gfsYearly: "0",
+      },
+    };
+
+    const { primary, secondary } = buildCopyVmAgentRequests(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      values,
+    );
+
+    expect(primary.days).toBe(45);
+    expect(secondary.days).toBe(60);
+  });
+
+  it("caps each side's GFS to the Forecast Horizon independently", () => {
+    const workload: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      gfsYearly: "5",
+      projectLengthYears: "1",
+      capGfsToForecastHorizon: true,
+    };
+
+    const { primary, secondary } = buildCopyVmAgentRequests(workload, copyBase);
+
+    // Both sides default to workloadData GFS; 5 yearly points capped to 1yr horizon.
+    expect(primary.yearlies).toBe(1);
+    expect(secondary.yearlies).toBe(1);
   });
 });
