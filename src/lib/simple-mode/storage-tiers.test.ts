@@ -38,9 +38,9 @@ describe("getTierStorageRows", () => {
   it("returns Performance, Capacity, and Archive rows in that order when all are present", () => {
     const rows = getTierStorageRows(
       makeData([
-        { diskGB: 3, diskPurpose: 4 },
-        { diskGB: 1, diskPurpose: 3 },
-        { diskGB: 2, diskPurpose: 13 },
+        { diskGB: 3, diskPurpose: 4 }, // archive, listed first to prove ordering is fixed
+        { diskGB: 1, diskPurpose: 3 }, // performance
+        { diskGB: 2, diskPurpose: 13 }, // capacity
       ]),
     );
     expect(rows.map((r) => r.key)).toEqual([
