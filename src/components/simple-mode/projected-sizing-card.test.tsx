@@ -278,6 +278,82 @@ describe("ProjectedSizingCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("derives the copy-mode subline's secondary figure as a residual of the rounded headline (D14), not its own independent rounding", async () => {
+    // Chosen so independent rounding and the residual disagree: primary
+    // 3113 GB / 1024 = 3.0400... TB -> "3.0"; secondary 2089 GB / 1024 =
+    // 2.0400... TB -> "2.0" on its own. But combined (3113+2089) / 1024 =
+    // 5.0800... TB -> "5.1", so the residual (5.1 - 3.0) is "2.1", not "2.0".
+    // A regression to independently rounding the secondary total would
+    // render "Secondary 2.0 TB" here instead and fail this assertion.
+    const primaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          volumes: [{ diskGB: 3113, diskPurpose: 2 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          networkThroughput: { inboundMBps: 20, outboundMBps: 10 },
+        },
+      },
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          volumes: [{ diskGB: 2089, diskPurpose: 3 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          networkThroughput: { inboundMBps: 8, outboundMBps: 4 },
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={{
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        }}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("5.1 TB")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText("Primary 3.0 TB + Secondary 2.1 TB"),
+    ).toBeInTheDocument();
+  });
+
   it("titles the direct-mode section Primary Repository with its target's tier label", async () => {
     vi.mocked(fetch).mockResolvedValue(
       jsonResponse({ success: true, mode: "direct", data: mockData }),
