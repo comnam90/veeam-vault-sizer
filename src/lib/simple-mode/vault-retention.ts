@@ -1,4 +1,5 @@
 import {
+  GFS_PERIOD_DAYS,
   VAULT_MINIMUM_RETENTION_DAYS,
   type RetentionOverride,
   type WorkloadDataValues,
@@ -53,9 +54,9 @@ export function resolveEffectiveRetention(
 // flags to whichever full is already being created on this cadence, rather
 // than spawning an independently-paced chain per class.
 function drivingCadenceDays(retention: EffectiveRetention): number | undefined {
-  if (retention.gfsWeekly > 0) return 7;
-  if (retention.gfsMonthly > 0) return 30;
-  if (retention.gfsYearly > 0) return 365;
+  if (retention.gfsWeekly > 0) return GFS_PERIOD_DAYS.weekly;
+  if (retention.gfsMonthly > 0) return GFS_PERIOD_DAYS.monthly;
+  if (retention.gfsYearly > 0) return GFS_PERIOD_DAYS.yearly;
   return undefined;
 }
 
@@ -74,19 +75,28 @@ export function computeClassLifetimes(
   if (retention.gfsWeekly > 0) {
     lifetimes.push({
       class: "weekly",
-      lifetimeDays: Math.max(retention.gfsWeekly * 7, chainFloor),
+      lifetimeDays: Math.max(
+        retention.gfsWeekly * GFS_PERIOD_DAYS.weekly,
+        chainFloor,
+      ),
     });
   }
   if (retention.gfsMonthly > 0) {
     lifetimes.push({
       class: "monthly",
-      lifetimeDays: Math.max(retention.gfsMonthly * 30, chainFloor),
+      lifetimeDays: Math.max(
+        retention.gfsMonthly * GFS_PERIOD_DAYS.monthly,
+        chainFloor,
+      ),
     });
   }
   if (retention.gfsYearly > 0) {
     lifetimes.push({
       class: "yearly",
-      lifetimeDays: Math.max(retention.gfsYearly * 365, chainFloor),
+      lifetimeDays: Math.max(
+        retention.gfsYearly * GFS_PERIOD_DAYS.yearly,
+        chainFloor,
+      ),
     });
   }
 

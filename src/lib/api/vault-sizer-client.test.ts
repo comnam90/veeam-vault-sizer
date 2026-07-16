@@ -24,9 +24,12 @@ describe("callVaultSizerApi", () => {
 
   it("POSTs workloadData and repositoryConfig to /api/vault-sizer and returns the unwrapped data", async () => {
     vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ success: true, data: mockData }), {
-        status: 200,
-      }),
+      new Response(
+        JSON.stringify({ success: true, mode: "direct", data: mockData }),
+        {
+          status: 200,
+        },
+      ),
     );
 
     const result = await callVaultSizerApi(
@@ -42,7 +45,40 @@ describe("callVaultSizerApi", () => {
         repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
       }),
     });
-    expect(result).toEqual(mockData);
+    expect(result).toEqual({ mode: "direct", data: mockData });
+  });
+
+  it("returns the copy-mode primary/secondary data unmutated", async () => {
+    const primaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 24,
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      ...mockData,
+      totalStorageTB: 18.4,
+    };
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          mode: "copy",
+          primary: primaryData,
+          secondary: secondaryData,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await callVaultSizerApi(DEFAULT_WORKLOAD_DATA_VALUES, {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    });
+
+    expect(result).toEqual({
+      mode: "copy",
+      primary: primaryData,
+      secondary: secondaryData,
+    });
   });
 
   it("throws the gateway's error message when success is false", async () => {
@@ -62,5 +98,28 @@ describe("callVaultSizerApi", () => {
         DEFAULT_REPOSITORY_CONFIG_VALUES,
       ),
     ).rejects.toThrow("sourceTB must be between 0 and 1,024,000");
+  });
+
+  it("forwards an AbortSignal to fetch when provided", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({ success: true, mode: "direct", data: mockData }),
+        {
+          status: 200,
+        },
+      ),
+    );
+    const controller = new AbortController();
+
+    await callVaultSizerApi(
+      DEFAULT_WORKLOAD_DATA_VALUES,
+      DEFAULT_REPOSITORY_CONFIG_VALUES,
+      controller.signal,
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/vault-sizer",
+      expect.objectContaining({ signal: controller.signal }),
+    );
   });
 });

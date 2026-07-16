@@ -9,6 +9,8 @@ export interface WorkloadDataValues {
   gfsWeekly: string;
   gfsMonthly: string;
   gfsYearly: string;
+  projectLengthYears: string;
+  capGfsToForecastHorizon: boolean;
 }
 
 export type WorkloadDataErrors = Partial<
@@ -24,7 +26,19 @@ export const DEFAULT_WORKLOAD_DATA_VALUES: WorkloadDataValues = {
   gfsWeekly: "4",
   gfsMonthly: "12",
   gfsYearly: "3",
+  projectLengthYears: "1",
+  capGfsToForecastHorizon: true,
 };
+
+// Weekly/Monthly/Yearly GFS period lengths, in days — shared by the vault
+// residency chain-completion math (vault-retention.ts) and the Forecast
+// Horizon GFS capping (cap-gfs-to-forecast-horizon.ts) so both agree on
+// what a GFS point "costs" in days.
+export const GFS_PERIOD_DAYS = {
+  weekly: 7,
+  monthly: 30,
+  yearly: 365,
+} as const;
 
 export type RepoType =
   | "vault-azure"
@@ -88,6 +102,19 @@ export function repoTypeRequiresImmutability(type: RepoType): boolean {
   return REPO_TYPES_REQUIRING_IMMUTABILITY.has(type);
 }
 
+// VBR's Fast Clone (block cloning) is a ReFS/XFS local-filesystem feature.
+// Hardened Repository is XFS-backed, so it qualifies alongside plain
+// Windows/Linux ReFS/XFS. NAS, Dedup Appliance, Vault, and object-storage
+// types don't run on a reflink-capable local filesystem, so they don't.
+export const REPO_TYPES_SUPPORTING_BLOCK_CLONING = new Set<RepoType>([
+  "refs-xfs",
+  "hardened-repository",
+]);
+
+export function repoTypeSupportsBlockCloning(type: RepoType): boolean {
+  return REPO_TYPES_SUPPORTING_BLOCK_CLONING.has(type);
+}
+
 // Google Cloud is the only repo type VBR disallows from feeding Archive Tier
 // — whether it's the Performance Tier type (no Capacity Tier in between) or
 // the Capacity Tier type itself. VBR draws no distinction between those two
@@ -102,10 +129,11 @@ export function repoTypeCanFeedArchiveTier(type: RepoType): boolean {
 
 // Object-storage-only immutability batching window (Block Generation).
 // Block/File types are absent — they enforce immutability natively, no
-// Block Generation concept applies.
+// Block Generation concept applies. Vault Azure and Vault AWS differ (10 vs
+// 30) despite sharing a Vault label — see ADR-0020.
 export const BLOCK_GENERATION_DAYS: Partial<Record<RepoType, number>> = {
   "vault-azure": 10,
-  "vault-aws": 10,
+  "vault-aws": 30,
   "azure-blob": 10,
   "s3-compatible": 10,
   "aws-s3": 30,
@@ -264,5 +292,19 @@ export interface SizerBffRequest {
 }
 
 export type SizerBffResponse =
-  | { success: true; data: CVmAgentReturnObject }
+  | { success: true; mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      success: true;
+      mode: "copy";
+      primary: CVmAgentReturnObject;
+      secondary: CVmAgentReturnObject;
+    }
   | { success: false; error: string };
+
+export type SizerResult =
+  | { mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      mode: "copy";
+      primary: CVmAgentReturnObject;
+      secondary: CVmAgentReturnObject;
+    };

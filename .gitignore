@@ -152,6 +152,11 @@ vite.config.ts.timestamp-*
 .claude/settings.config.json
 .claude/settings.local.json
 .claude/worktrees/
+.claude/.headroom_wrap_marker.json
 
 # Brainstorming visual companion mockups
 .superpowers/
+
+# headroom / tokensave tool caches
+.headroom/
+.tokensave/

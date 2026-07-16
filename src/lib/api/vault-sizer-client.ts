@@ -1,20 +1,22 @@
 import type {
   RepositoryConfigValues,
   SizerBffResponse,
+  SizerResult,
   WorkloadDataValues,
 } from "@/types/simple-mode";
-import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
 const API_URL = "/api/vault-sizer";
 
 export async function callVaultSizerApi(
   workloadData: WorkloadDataValues,
   repositoryConfig: RepositoryConfigValues,
-): Promise<CVmAgentReturnObject> {
+  signal?: AbortSignal,
+): Promise<SizerResult> {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ workloadData, repositoryConfig }),
+    signal,
   });
 
   const body: SizerBffResponse = await response.json();
@@ -23,5 +25,9 @@ export async function callVaultSizerApi(
     throw new Error(body.error);
   }
 
-  return body.data;
+  if (body.mode === "direct") {
+    return { mode: "direct", data: body.data };
+  }
+
+  return { mode: "copy", primary: body.primary, secondary: body.secondary };
 }

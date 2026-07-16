@@ -1,0 +1,382 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen, within } from "@testing-library/react";
+import { ProjectedSizingCard } from "./projected-sizing-card";
+import {
+  DEFAULT_REPOSITORY_CONFIG_VALUES,
+  DEFAULT_WORKLOAD_DATA_VALUES,
+} from "@/types/simple-mode";
+import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
+
+const mockData: CVmAgentReturnObject = {
+  totalStorageTB: 18.4,
+  workspaceGB: 0,
+  performanceTierImmutabilityTaxGB: 0,
+  capacityTierImmutabilityTaxGB: 0,
+  repoCompute: {
+    compute: {
+      cores: 4,
+      ram: 16,
+      volumes: [{ diskGB: 18841, diskPurpose: 3 }],
+    },
+  },
+  // Deliberately distinct from repoCompute's cores/ram above: proves
+  // InfrastructureTelemetry reads proxyCompute (proxy sizing), not
+  // repoCompute (repository storage volumes) — a swap between the two
+  // is type-compatible and wouldn't otherwise be caught by these tests.
+  proxyCompute: {
+    compute: {
+      cores: 8,
+      ram: 32,
+      networkThroughput: { inboundMBps: 100, outboundMBps: 50 },
+    },
+  },
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status });
+}
+
+describe("ProjectedSizingCard", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it("renders both ghost placeholders", () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("projected-sizing-assumptions-placeholder"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId("projected-sizing-actions-placeholder"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a loading indicator while the initial request is in flight", () => {
+    vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByLabelText("Recalculating")).toBeInTheDocument();
+  });
+
+  it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
+    await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
+    expect(screen.getByText("32 GB")).toBeInTheDocument();
+  });
+
+  it("labels the compute/network section as Proxy Compute, distinct from repo storage sizing above it", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("Proxy Compute")).toBeInTheDocument(),
+    );
+  });
+
+  it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // proxyCompute.compute.networkThroughput from mockData, scoped to the
+    // Nightly Incremental row so a nightly/initial-full swap would fail.
+    await vi.waitFor(() => {
+      const nightlyRow = screen
+        .getByText("Nightly Incremental (8h)")
+        .closest("tr");
+      expect(nightlyRow).not.toBeNull();
+      expect(within(nightlyRow!).getByText("400.0 Mbps")).toBeInTheDocument();
+    });
+    // Derived from DEFAULT_WORKLOAD_DATA_VALUES: sourceSizeTB "10",
+    // dataReductionPercent "50" — computed instantly, no fetch involved.
+    // Scoped to the Initial Full / Restore row for the same reason.
+    const initialFullRow = screen
+      .getByText("Initial Full / Restore (24h)")
+      .closest("tr");
+    expect(initialFullRow).not.toBeNull();
+    expect(within(initialFullRow!).getByText("485.5 Mbps")).toBeInTheDocument();
+  });
+
+  it("shows the error banner and keeps last-good data visible beneath it", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, mode: "direct", data: mockData }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { success: false, error: "Upstream sizing API unreachable" },
+          502,
+        ),
+      );
+
+    const { rerender } = render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0),
+    );
+
+    const edited = { ...DEFAULT_WORKLOAD_DATA_VALUES, sourceSizeTB: "11" };
+    act(() => {
+      rerender(
+        <ProjectedSizingCard
+          workloadData={edited}
+          repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+          onChange={() => {}}
+        />,
+      );
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Upstream sizing API unreachable",
+      ),
+    );
+    expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0);
+  });
+
+  it("renders the split canvas with a combined total and both site sections in copy mode", async () => {
+    const primaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          volumes: [{ diskGB: 24576, diskPurpose: 2 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          networkThroughput: { inboundMBps: 20, outboundMBps: 10 },
+        },
+      },
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          volumes: [{ diskGB: 18841, diskPurpose: 3 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          networkThroughput: { inboundMBps: 8, outboundMBps: 4 },
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={{
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        }}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("Combined Required Storage")).toBeInTheDocument(),
+    );
+    // 24576 GB + 18841 GB = 43417 GB => 42.4 TB combined.
+    expect(screen.getByText("42.4 TB")).toBeInTheDocument();
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
+    expect(screen.getByText("Secondary Repository")).toBeInTheDocument();
+    // Default copy config: primary hardened-repository, secondary vault-azure,
+    // both on the Performance tier (the only tier either side has enabled).
+    expect(
+      screen.getByText("Performance — Hardened Repository"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument();
+    // Subline: primary 24576 GB / 1024 = 24.0 TB; secondary is the residual
+    // from the rounded combined/primary figures, not its own rounding.
+    expect(
+      screen.getByText("Primary 24.0 TB + Secondary 18.4 TB"),
+    ).toBeInTheDocument();
+  });
+
+  it("derives the copy-mode subline's secondary figure as a residual of the rounded headline (D14), not its own independent rounding", async () => {
+    // Chosen so independent rounding and the residual disagree: primary
+    // 3113 GB / 1024 = 3.0400... TB -> "3.0"; secondary 2089 GB / 1024 =
+    // 2.0400... TB -> "2.0" on its own. But combined (3113+2089) / 1024 =
+    // 5.0800... TB -> "5.1", so the residual (5.1 - 3.0) is "2.1", not "2.0".
+    // A regression to independently rounding the secondary total would
+    // render "Secondary 2.0 TB" here instead and fail this assertion.
+    const primaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          volumes: [{ diskGB: 3113, diskPurpose: 2 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 4,
+          ram: 8,
+          networkThroughput: { inboundMBps: 20, outboundMBps: 10 },
+        },
+      },
+    };
+    const secondaryData: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          volumes: [{ diskGB: 2089, diskPurpose: 3 }],
+        },
+      },
+      proxyCompute: {
+        compute: {
+          cores: 2,
+          ram: 4,
+          networkThroughput: { inboundMBps: 8, outboundMBps: 4 },
+        },
+      },
+    };
+
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "copy",
+        primary: primaryData,
+        secondary: secondaryData,
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={{
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        }}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByText("5.1 TB")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText("Primary 3.0 TB + Secondary 2.1 TB"),
+    ).toBeInTheDocument();
+  });
+
+  it("titles the direct-mode section Primary Repository with its target's tier label", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // Wait on the data-dependent tier label rather than the static title:
+    // "Primary Repository" is present from the very first (pre-fetch) render
+    // since it doesn't depend on data, so waiting on it resolves immediately
+    // without giving the in-flight fetch's microtask a chance to flush,
+    // racing the assertion below. "Performance — Vault Azure" only appears
+    // once data has loaded, so waiting on it guarantees the loaded render.
+    await vi.waitFor(() =>
+      expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument(),
+    );
+    // DEFAULT_REPOSITORY_CONFIG_VALUES.targetRepository is "vault-azure".
+    expect(screen.getByText("Primary Repository")).toBeInTheDocument();
+  });
+});

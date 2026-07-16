@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { WorkloadDataCard } from "./workload-data-card";
 import { BackupRepositoryCard } from "./backup-repository-card";
+import { ProjectedSizingCard } from "./projected-sizing-card";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
   DEFAULT_WORKLOAD_DATA_VALUES,
@@ -26,9 +27,10 @@ export function SimpleModePage() {
         />
       </div>
       <div className="lg:col-span-4">
-        <div
-          data-testid="simple-mode-sidebar-placeholder"
-          className="border-border h-full min-h-40 rounded-lg border border-dashed"
+        <ProjectedSizingCard
+          workloadData={workloadData}
+          repositoryConfig={repositoryConfig}
+          onChange={setWorkloadData}
         />
       </div>
     </div>
