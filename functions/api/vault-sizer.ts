@@ -125,7 +125,7 @@ async function resolveInputs(inputs: VmAgentInputs): Promise<ResolvedInputs> {
     finalThreshold = correctedThreshold;
   }
 
-  if (isArchiveComplete(finalData)) {
+  if (isArchiveComplete(finalData) && !hasLeakedNonGfsPoints(finalData)) {
     return {
       ok: true,
       data: finalData,

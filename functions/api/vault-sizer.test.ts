@@ -676,6 +676,104 @@ describe("onRequestPost", () => {
     expect(thirdSentBody.archiveTierDays).toBe(90);
   });
 
+  it("triggering config, corrected resubmit is GFS-complete but still has a residual Capacity Tier volume: three fetches, raw fallback data, failed notice", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            makeUpstreamResponse(
+              [
+                { diskGB: 100, diskPurpose: 3 },
+                { diskGB: 50, diskPurpose: 4 },
+                { diskGB: 20, diskPurpose: 13 },
+              ],
+              [
+                {
+                  pointType: "performanceTier",
+                  day: 10,
+                  backupCapacity: 0.1,
+                  isFull: true,
+                  isGFS: false,
+                  isImmutable: false,
+                },
+                {
+                  pointType: "capacityTier",
+                  day: 95,
+                  backupCapacity: 0.1,
+                  isFull: false,
+                  isGFS: false,
+                  isImmutable: false,
+                },
+              ],
+            ),
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            makeUpstreamResponse(
+              // Every GFS day IS tagged archiveTier below (isArchiveComplete
+              // would say true) — but diskPurpose 13 is still non-zero, i.e.
+              // the corrected threshold did not actually fully drain the
+              // phantom Capacity Tier. This is the residual-leak case
+              // isArchiveComplete alone cannot detect.
+              [
+                { diskGB: 150, diskPurpose: 3 },
+                { diskGB: 60, diskPurpose: 4 },
+                { diskGB: 5, diskPurpose: 13 },
+              ],
+              [
+                {
+                  pointType: "performanceTier",
+                  day: 10,
+                  backupCapacity: 0.1,
+                  isFull: true,
+                  isGFS: false,
+                  isImmutable: false,
+                },
+                {
+                  pointType: "archiveTier",
+                  day: 150,
+                  backupCapacity: 0.8,
+                  isFull: true,
+                  isGFS: true,
+                  isImmutable: false,
+                },
+              ],
+            ),
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            makeUpstreamResponse([{ diskGB: 999, diskPurpose: 2 }], [], 88),
+          ),
+          { status: 200 },
+        ),
+      );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: archiveOnlySobrConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(body.data.totalStorageTB).toBe(88);
+    expect(body.archiveTierNotice).toEqual({ status: "failed" });
+
+    const [, thirdInit] = vi.mocked(fetch).mock.calls[2];
+    const thirdSentBody = JSON.parse((thirdInit as RequestInit).body as string);
+    expect(thirdSentBody.moveCapacityTierEnabled).toBeFalsy();
+    expect(thirdSentBody.archiveTierDays).toBe(90);
+  });
+
   it("returns 502 when the workaround's last-resort fallback call itself rejects", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(
