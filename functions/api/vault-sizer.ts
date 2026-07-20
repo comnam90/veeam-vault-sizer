@@ -2,7 +2,15 @@ import {
   buildCopyVmAgentRequests,
   buildVmAgentRequest,
 } from "../../src/lib/simple-mode/build-vm-agent-request";
+import {
+  buildPhantomCapacityInputs,
+  computeCorrectedThreshold,
+  detectsArchiveTierWithoutCapacity,
+  hasLeakedNonGfsPoints,
+  isArchiveComplete,
+} from "../../src/lib/simple-mode/resolve-archive-tier-workaround";
 import type {
+  ArchiveTierNotice,
   SizerBffRequest,
   SizerBffResponse,
 } from "../../src/types/simple-mode";
@@ -60,6 +68,80 @@ async function parseBody(response: Response): Promise<unknown> {
   }
 }
 
+type FetchOutcome =
+  | { ok: true; data: CVmAgentReturnObject }
+  | { ok: false; error: string; status: number };
+
+async function fetchAndParse(inputs: VmAgentInputs): Promise<FetchOutcome> {
+  const upstream = await upstreamFetch(inputs);
+  const upstreamBody: unknown = await parseBody(upstream);
+
+  if (upstream.ok) {
+    const { data } = upstreamBody as { data: CVmAgentReturnObject };
+    return { ok: true, data };
+  }
+
+  return {
+    ok: false,
+    error: extractErrorMessage(upstreamBody),
+    status: upstream.status,
+  };
+}
+
+type ResolvedInputs =
+  | {
+      ok: true;
+      data: CVmAgentReturnObject;
+      archiveTierNotice?: ArchiveTierNotice;
+    }
+  | { ok: false; error: string; status: number };
+
+// Orchestrates the Archive Tier detect-and-resubmit SOBR workaround (ADR-0022;
+// docs/evidence/sobr-archive-tier-no-capacity/README.md).
+async function resolveInputs(inputs: VmAgentInputs): Promise<ResolvedInputs> {
+  if (!detectsArchiveTierWithoutCapacity(inputs)) {
+    return fetchAndParse(inputs);
+  }
+
+  const phantomInputs = buildPhantomCapacityInputs(inputs);
+  const first = await fetchAndParse(phantomInputs);
+  if (!first.ok) return first;
+
+  let finalData = first.data;
+  let finalThreshold = phantomInputs.capacityTierDays;
+
+  if (hasLeakedNonGfsPoints(first.data)) {
+    const correctedThreshold = computeCorrectedThreshold(first.data);
+    const correctedInputs = {
+      ...phantomInputs,
+      capacityTierDays: correctedThreshold,
+    };
+    const second = await fetchAndParse(correctedInputs);
+    if (!second.ok) return second;
+    finalData = second.data;
+    finalThreshold = correctedThreshold;
+  }
+
+  if (isArchiveComplete(finalData)) {
+    return {
+      ok: true,
+      data: finalData,
+      archiveTierNotice:
+        finalThreshold !== inputs.archiveTierDays
+          ? { status: "adjusted", effectiveThresholdDays: finalThreshold }
+          : undefined,
+    };
+  }
+
+  const fallback = await fetchAndParse(inputs);
+  if (!fallback.ok) return fallback;
+  return {
+    ok: true,
+    data: fallback.data,
+    archiveTierNotice: { status: "failed" },
+  };
+}
+
 export async function onRequestOptions(): Promise<Response> {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -97,17 +179,23 @@ async function handleDirect(bffRequest: SizerBffRequest): Promise<Response> {
   }
 
   try {
-    const upstream = await upstreamFetch(vmAgentInputs);
-    const upstreamBody: unknown = await parseBody(upstream);
+    const resolved = await resolveInputs(vmAgentInputs);
 
-    if (upstream.ok) {
-      const { data } = upstreamBody as { data: CVmAgentReturnObject };
-      return jsonResponse({ success: true, mode: "direct", data }, 200);
+    if (!resolved.ok) {
+      return jsonResponse(
+        { success: false, error: resolved.error },
+        resolved.status,
+      );
     }
 
     return jsonResponse(
-      { success: false, error: extractErrorMessage(upstreamBody) },
-      upstream.status,
+      {
+        success: true,
+        mode: "direct",
+        data: resolved.data,
+        archiveTierNotice: resolved.archiveTierNotice,
+      },
+      200,
     );
   } catch {
     return jsonResponse(
