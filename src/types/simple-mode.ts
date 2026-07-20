@@ -291,20 +291,36 @@ export interface SizerBffRequest {
   repositoryConfig: RepositoryConfigValues;
 }
 
+export interface ArchiveTierNotice {
+  status: "adjusted" | "failed";
+  effectiveThresholdDays?: number; // present only when status === "adjusted"
+}
+
 export type SizerBffResponse =
-  | { success: true; mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      success: true;
+      mode: "direct";
+      data: CVmAgentReturnObject;
+      archiveTierNotice?: ArchiveTierNotice;
+    }
   | {
       success: true;
       mode: "copy";
       primary: CVmAgentReturnObject;
       secondary: CVmAgentReturnObject;
+      archiveTierNotice?: ArchiveTierNotice;
     }
   | { success: false; error: string };
 
 export type SizerResult =
-  | { mode: "direct"; data: CVmAgentReturnObject }
+  | {
+      mode: "direct";
+      data: CVmAgentReturnObject;
+      archiveTierNotice?: ArchiveTierNotice;
+    }
   | {
       mode: "copy";
       primary: CVmAgentReturnObject;
       secondary: CVmAgentReturnObject;
+      archiveTierNotice?: ArchiveTierNotice;
     };
