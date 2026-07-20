@@ -57,6 +57,7 @@ export function ProjectedSizingCard({
 
   const directData = data?.mode === "direct" ? data.data : null;
   const copyData = data?.mode === "copy" ? data : null;
+  const archiveTierNotice = data?.archiveTierNotice;
 
   // Shared by Direct mode's single target and Copy mode's Secondary — both
   // dispatch on the same targetRepository/sobr shape.
@@ -93,6 +94,25 @@ export function ProjectedSizingCard({
             className="border-destructive text-destructive rounded-md border px-3 py-2 text-sm"
           >
             {error}
+          </div>
+        ) : null}
+
+        {archiveTierNotice?.status === "adjusted" ? (
+          <div className="border-border bg-muted/50 text-muted-foreground rounded-md border px-3 py-2 text-sm">
+            Effective offload threshold adjusted internally to{" "}
+            {archiveTierNotice.effectiveThresholdDays} days to match GFS chain
+            offload requirements.
+          </div>
+        ) : null}
+
+        {archiveTierNotice?.status === "failed" ? (
+          <div
+            role="alert"
+            className="border-destructive text-destructive rounded-md border px-3 py-2 text-sm"
+          >
+            This configuration's Archive Tier sizing couldn't be fully verified
+            due to a known calculator engine limitation. Try enabling Capacity
+            Tier, or adjusting the Archive Tier offload threshold.
           </div>
         ) : null}
 
