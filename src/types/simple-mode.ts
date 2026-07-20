@@ -291,10 +291,8 @@ export interface SizerBffRequest {
   repositoryConfig: RepositoryConfigValues;
 }
 
-export interface ArchiveTierNotice {
-  status: "adjusted" | "failed";
-  effectiveThresholdDays?: number; // present only when status === "adjusted"
-}
+export type ArchiveTierNotice =
+  { status: "adjusted"; effectiveThresholdDays: number } | { status: "failed" };
 
 export type SizerBffResponse =
   | {
