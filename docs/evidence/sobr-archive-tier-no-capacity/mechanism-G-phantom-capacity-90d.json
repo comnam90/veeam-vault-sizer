@@ -1,0 +1,583 @@
+{
+  "siteId": "aefac4e6-af31-4246-8a88-74112292f16d",
+  "siteName": "",
+  "id": "ea4c34bd-d03e-4039-a143-712896166f21",
+  "name": "",
+  "totalStorageTB": 18.339999999999975,
+  "proxyCompute": {
+    "compute": {
+      "name": "",
+      "site": {
+        "siteId": "0cda7279-3e08-4dd2-8bcb-bf932d2269d2",
+        "siteName": ""
+      },
+      "cores": 4,
+      "ram": 8,
+      "volumes": [],
+      "networkThroughput": {
+        "inboundMBps": 10.922666666666666,
+        "outboundMBps": 5.461333333333333
+      }
+    },
+    "siteId": ""
+  },
+  "repoCompute": {
+    "compute": {
+      "name": "",
+      "site": {
+        "siteId": "926330ae-581f-41df-9edb-dfd2404e3121",
+        "siteName": ""
+      },
+      "cores": 2,
+      "ram": 8,
+      "volumes": [
+        {
+          "diskGB": 18780.159999999974,
+          "throughputMbps": {
+            "inboundMBps": 5.461333333333333,
+            "outboundMBps": 333.8695111111107
+          },
+          "diskPurpose": 2
+        },
+        {
+          "diskGB": 0,
+          "throughputMbps": {
+            "inboundMBps": 0,
+            "outboundMBps": 0
+          },
+          "diskPurpose": 13
+        },
+        {
+          "diskGB": 13235.199999999997,
+          "throughputMbps": {
+            "inboundMBps": 235.29244444444438,
+            "outboundMBps": 235.29244444444438
+          },
+          "diskPurpose": 4
+        }
+      ],
+      "networkThroughput": {
+        "inboundMBps": 5.461333333333333,
+        "outboundMBps": 5.461333333333333
+      }
+    },
+    "siteId": ""
+  },
+  "indexResults": {
+    "compute": {
+      "name": "",
+      "site": {
+        "siteId": "c0e88cce-fab1-4acd-9bd4-29ce253dc92b",
+        "siteName": ""
+      },
+      "cores": 0,
+      "ram": 0,
+      "volumes": [],
+      "networkThroughput": {
+        "inboundMBps": 0,
+        "outboundMBps": 0
+      }
+    },
+    "vbrServerSpaceGB": 0,
+    "emServerSpaceGB": 0
+  },
+  "transactions": {
+    "performanceTierTransactions": {
+      "firstMonthTransactions": 0,
+      "secondMonthTransactions": 0,
+      "finalMonthTransactions": 0
+    },
+    "capacityTierTransactions": {
+      "firstMonthTransactions": 1341.5833333333333,
+      "secondMonthTransactions": 1791.8333333333333,
+      "finalMonthTransactions": 1971
+    },
+    "archiveTierTransactions": {
+      "firstMonthTransactions": 3.4166666666666665,
+      "secondMonthTransactions": 3.4166666666666665,
+      "finalMonthTransactions": 3.4166666666666665
+    }
+  },
+  "workspaceGB": 5376,
+  "performanceTierImmutabilityTaxGB": 0,
+  "capacityTierImmutabilityTaxGB": 0,
+  "restorePoints": [
+    {
+      "pointType": "archiveTier",
+      "day": 371,
+      "backupCapacity": 5.5,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M12 Y1"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 336,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M11"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 308,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M10"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 280,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M9"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 245,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M8"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 217,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M7"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 189,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M6"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 154,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M5"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 126,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M4"
+    },
+    {
+      "pointType": "archiveTier",
+      "day": 98,
+      "backupCapacity": 0.82,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M3"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 63,
+      "backupCapacity": 5.5,
+      "isFull": true,
+      "isGFS": true,
+      "isImmutable": false,
+      "flags": "M2"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 42,
+      "backupCapacity": 0.825,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D42"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 41,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D41"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 40,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D40"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 39,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D39"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 38,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D38"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 37,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D37"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 36,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D36"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 35,
+      "backupCapacity": 0.165,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "M1"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 34,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D34"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 33,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D33"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 32,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D32"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 31,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": false,
+      "flags": "D31"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 30,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D30"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 29,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D29"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 28,
+      "backupCapacity": 0.165,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "W4"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 27,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D27"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 26,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D26"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 25,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D25"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 24,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D24"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 23,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D23"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 22,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D22"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 21,
+      "backupCapacity": 0.165,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "W3"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 20,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D20"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 19,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D19"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 18,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D18"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 17,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D17"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 16,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D16"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 15,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D15"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 14,
+      "backupCapacity": 0.165,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "W2"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 13,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D13"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 12,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D12"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 11,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D11"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 10,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D10"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 9,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D9"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 8,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D8"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 7,
+      "backupCapacity": 0.165,
+      "isFull": true,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "W1"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 6,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D6"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 5,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D5"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 4,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D4"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 3,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D3"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 2,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D2"
+    },
+    {
+      "pointType": "performanceTier",
+      "day": 1,
+      "backupCapacity": 0.165,
+      "isFull": false,
+      "isGFS": false,
+      "isImmutable": true,
+      "flags": "D1"
+    }
+  ]
+}
