@@ -97,7 +97,10 @@ type ResolvedInputs =
   | { ok: false; error: string; status: number };
 
 // Orchestrates the Archive Tier detect-and-resubmit SOBR workaround (ADR-0022;
-// docs/evidence/sobr-archive-tier-no-capacity/README.md).
+// docs/evidence/sobr-archive-tier-no-capacity/README.md). Retire this once
+// Veeam confirms a fix for Issues 1/2, or once
+// `node docs/evidence/sobr-archive-tier-no-capacity/probe.mjs` reports drift
+// from README.md's documented findings.
 async function resolveInputs(inputs: VmAgentInputs): Promise<ResolvedInputs> {
   if (!detectsArchiveTierWithoutCapacity(inputs)) {
     return fetchAndParse(inputs);

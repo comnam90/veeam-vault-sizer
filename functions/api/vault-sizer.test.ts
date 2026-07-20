@@ -504,6 +504,7 @@ describe("onRequestPost", () => {
                   isImmutable: false,
                 },
               ],
+              50,
             ),
           ),
           { status: 200 },
@@ -544,6 +545,7 @@ describe("onRequestPost", () => {
                   isImmutable: false,
                 },
               ],
+              70,
             ),
           ),
           { status: 200 },
@@ -559,6 +561,7 @@ describe("onRequestPost", () => {
     const body = await response.json();
 
     expect(fetch).toHaveBeenCalledTimes(2);
+    expect(body.data.totalStorageTB).toBe(70);
     expect(body.archiveTierNotice).toEqual({
       status: "adjusted",
       effectiveThresholdDays: 96,
