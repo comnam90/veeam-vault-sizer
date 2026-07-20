@@ -221,31 +221,27 @@ async function handleCopy(bffRequest: SizerBffRequest): Promise<Response> {
   }
 
   try {
-    const [primaryRes, secondaryRes] = await Promise.all([
-      upstreamFetch(inputs.primary),
-      upstreamFetch(inputs.secondary),
-    ]);
-    const [primaryBody, secondaryBody] = await Promise.all([
-      parseBody(primaryRes),
-      parseBody(secondaryRes),
+    const [primaryResolved, secondaryResolved] = await Promise.all([
+      resolveInputs(inputs.primary),
+      resolveInputs(inputs.secondary),
     ]);
 
-    if (!primaryRes.ok) {
+    if (!primaryResolved.ok) {
       return jsonResponse(
         {
           success: false,
-          error: `Primary (on-premises) sizing failed: ${extractErrorMessage(primaryBody)}`,
+          error: `Primary (on-premises) sizing failed: ${primaryResolved.error}`,
         },
-        primaryRes.status,
+        primaryResolved.status,
       );
     }
-    if (!secondaryRes.ok) {
+    if (!secondaryResolved.ok) {
       return jsonResponse(
         {
           success: false,
-          error: `Secondary (offsite Vault) sizing failed: ${extractErrorMessage(secondaryBody)}`,
+          error: `Secondary (offsite Vault) sizing failed: ${secondaryResolved.error}`,
         },
-        secondaryRes.status,
+        secondaryResolved.status,
       );
     }
 
@@ -253,8 +249,11 @@ async function handleCopy(bffRequest: SizerBffRequest): Promise<Response> {
       {
         success: true,
         mode: "copy",
-        primary: (primaryBody as { data: CVmAgentReturnObject }).data,
-        secondary: (secondaryBody as { data: CVmAgentReturnObject }).data,
+        primary: primaryResolved.data,
+        secondary: secondaryResolved.data,
+        archiveTierNotice:
+          primaryResolved.archiveTierNotice ??
+          secondaryResolved.archiveTierNotice,
       },
       200,
     );

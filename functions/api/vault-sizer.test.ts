@@ -839,4 +839,81 @@ describe("onRequestPost", () => {
     expect(secondSentBody.moveCapacityTierEnabled).toBeFalsy();
     expect(secondSentBody.archiveTierDays).toBe(90);
   });
+
+  it("Backup Copy: Secondary triggers and gets an adjusted notice, Primary is unaffected", async () => {
+    const copyArchiveOnlyConfig: RepositoryConfigValues = {
+      ...copyConfig,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        archiveTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+          enabled: true,
+          moveDays: "20",
+        },
+      },
+    };
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            makeUpstreamResponse([{ diskGB: 24576, diskPurpose: 2 }], [], 24),
+          ),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify(
+            makeUpstreamResponse(
+              [
+                { diskGB: 100, diskPurpose: 3 },
+                { diskGB: 50, diskPurpose: 4 },
+                { diskGB: 0, diskPurpose: 13 },
+              ],
+              [
+                {
+                  pointType: "performanceTier",
+                  day: 10,
+                  backupCapacity: 0.1,
+                  isFull: true,
+                  isGFS: false,
+                  isImmutable: false,
+                },
+                {
+                  pointType: "archiveTier",
+                  day: 95,
+                  backupCapacity: 0.5,
+                  isFull: true,
+                  isGFS: true,
+                  isImmutable: false,
+                },
+              ],
+            ),
+          ),
+          { status: 200 },
+        ),
+      );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyArchiveOnlyConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(body.primary.totalStorageTB).toBe(24);
+    expect(body.archiveTierNotice).toEqual({
+      status: "adjusted",
+      effectiveThresholdDays: 30,
+    });
+
+    const [, secondaryInit] = vi.mocked(fetch).mock.calls[1];
+    const secondarySentBody = JSON.parse(
+      (secondaryInit as RequestInit).body as string,
+    );
+    expect(secondarySentBody.capacityTierDays).toBe(30);
+  });
 });
