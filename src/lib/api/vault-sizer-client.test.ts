@@ -124,6 +124,28 @@ describe("callVaultSizerApi", () => {
     });
   });
 
+  it("threads archiveTierNotice through for copy mode", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          mode: "copy",
+          primary: mockData,
+          secondary: mockData,
+          archiveTierNotice: { status: "failed" },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await callVaultSizerApi(DEFAULT_WORKLOAD_DATA_VALUES, {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    });
+
+    expect(result.archiveTierNotice).toEqual({ status: "failed" });
+  });
+
   it("forwards an AbortSignal to fetch when provided", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(
