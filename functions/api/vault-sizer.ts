@@ -251,6 +251,9 @@ async function handleCopy(bffRequest: SizerBffRequest): Promise<Response> {
         mode: "copy",
         primary: primaryResolved.data,
         secondary: secondaryResolved.data,
+        // Primary is always a standalone repo in copy mode (never a SOBR), so
+        // it can never carry archiveTierEnabled — only Secondary can trigger
+        // the workaround and produce a notice.
         archiveTierNotice:
           primaryResolved.archiveTierNotice ??
           secondaryResolved.archiveTierNotice,
