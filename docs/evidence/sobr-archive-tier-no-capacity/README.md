@@ -229,6 +229,55 @@ inputs→request mapper). It belongs in the BFF handler
 as a two-pass flow, which also changes the testing story from a synchronous
 unit test to an integration-level test of the handler.
 
+## Issue 3 — completeness check must be threshold-aware, not plain day-set membership (2026-07-21)
+
+"Next steps" #3 above (and the shipped implementation) took `isArchiveComplete`
+to mean plain day-set membership: every `isGFS: true` day in the response
+must appear tagged `archiveTier`, full stop. **That's wrong**, and it broke
+the _production default configuration_ — Simple Mode, SOBR Builder, Direct
+to Vault, Vault Azure Performance Tier, no Capacity Tier, Archive Tier at
+its default 90-day threshold produced a hard `{status: "failed"}` disclaimer
+for every `archiveTierDays` value above 62.
+
+Root cause: with the app's defaults (`sourceTB: 10`, `days: 30`,
+`weeklies: 4`, `monthlies: 12`, `yearlies: 1` after Forecast Horizon
+capping, `immutablePerfDays: 30`), the first distinct monthly GFS point
+(`M2`) lands on day 63. At `archiveTierDays: 90` the phantom Capacity
+Tier's move threshold is `max(90, 30) = 90` — and day 63 is 27 days short
+of that threshold, so it correctly stays `performanceTier`-only; it hasn't
+aged into the Capacity→Archive relay yet. Every GFS day actually past the
+threshold (`M3` day 98 onward) _was_ tagged `archiveTier` correctly. Plain
+day-set membership can't tell "correctly too young to archive yet" apart
+from "leaked" — it demanded day 63 be archived too, and failed the whole
+config.
+
+This also explains the earlier claim "the live evidence sweep found zero
+completeness failures" (design spec, D6): every swept scenario drove
+`capacityTierDays` from the immutability floor or a leak-corrected
+threshold, never from a user `archiveTierDays` large enough to leave an
+early GFS point legitimately un-archived. The production default (90 >
+first GFS day 63) is exactly that untested region.
+
+**Fix**: `isArchiveComplete(response, threshold)` now only requires
+`isGFS: true` days where `day > threshold` to be tagged `archiveTier`
+(`threshold` = the exact `capacityTierDays` used in the request that
+produced the response — `finalThreshold` in the BFF handler, not the raw
+user `archiveTierDays`). GFS days at or under the threshold are exempt.
+Confirmed against the live upstream API for `archiveTierDays` 30, 62, 63,
+90, 200, 400, 1200 with the app's defaults otherwise — all resolve cleanly
+(no false `{status: "failed"}`), while a hand-built fixture with a
+genuinely leaked day past the threshold still correctly returns `false`.
+This still complies with ADR-0001 / ADR-0022: `threshold` is a value we
+already chose to send (not derived from the response), so the check still
+inspects only the response's own `day`/`isGFS`/`pointType` fields plus a
+locally-known request parameter — no local sizing math.
+
+This reasoning is safe only because of the "Interleaving-omission" finding
+above (`min(day of isGFS:true point) > max(day of isGFS:false point)`) —
+i.e., the corrected threshold (when a leak-driven resubmit happens) never
+lands past a GFS day, so `day > threshold` reliably separates "not yet
+due" from "leaked."
+
 ## Options considered
 
 | Path                                       | Pros                                                                                                                                                                                             | Cons                                                                                                                                                                                                                                                                                                                                                                      |

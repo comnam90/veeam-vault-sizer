@@ -82,12 +82,13 @@ tool see correct numbers for this configuration today.
   // which implies at least one non-GFS point exists — an empty non-GFS set
   // (max of nothing → NaN) is not reachable from that call site.
 
-  isArchiveComplete(response: CVmAgentReturnObject): boolean
-  // every isGFS:true day appears (at least once) as pointType archiveTier.
-  // Plain day-set membership — matches README.md's own "Next steps" #3
-  // conclusion. Single-response check — isGFS/day assignment is stable
-  // across different threshold values on the same dataset (validated in the
-  // evidence doc), so there is no need to diff against an earlier response.
+  isArchiveComplete(response: CVmAgentReturnObject, threshold: number): boolean
+  // every isGFS:true day with day > threshold appears (at least once) as
+  // pointType archiveTier. threshold is the exact capacityTierDays value
+  // used in the request that produced `response` (finalThreshold in the
+  // caller). Originally shipped as plain day-set membership over ALL
+  // isGFS:true days regardless of age — see the 2026-07-21 amendment below
+  // for why that was wrong, not just incomplete.
   ```
 
   **No tax-field OR-branch.** An earlier draft of this function also accepted
@@ -102,6 +103,22 @@ tool see correct numbers for this configuration today.
   README.md's own conclusion. Plain membership is both simpler and
   strictly stricter (an omission that happened to coincide with a non-zero
   tax field for unrelated reasons would no longer be excused).
+
+  **Amendment (2026-07-21) — plain day-set membership was wrong, not just
+  incomplete.** Shipped against the production default config
+  (`archiveTierDays: 90`, `immutablePerfDays: 30`, no Capacity Tier, Vault
+  Azure Performance Tier) it produced a hard `{status: "failed"}` for every
+  `archiveTierDays` above 62 — see README.md's "Issue 3." The earlier "live
+  evidence sweep found zero completeness failures" claim (D6 below) held
+  only because every swept scenario drove `capacityTierDays` from the
+  immutability floor or a leak-corrected threshold, never from a user
+  `archiveTierDays` large enough to leave an early GFS point legitimately
+  too young to archive yet. `isArchiveComplete` now takes the threshold
+  actually used (`finalThreshold`) as a second argument and only requires
+  archival for `isGFS: true` days where `day > threshold`; days at or under
+  it are exempt (correctly still `performanceTier`-only). Still a
+  single-response, ADR-0001-compliant check — `threshold` is a value the
+  caller already chose to send, not something derived from the response.
 
   **Rejected: a two-response `validateWorkaroundIntegrity(baseResponse,
 correctedResponse)` comparing total volume across the floor-threshold and
@@ -194,7 +211,12 @@ correctedResponse)` comparing total volume across the floor-threshold and
   blocking the result entirely — this is expected to be rare (the evidence
   sweep found zero completeness failures across 1–1,000 day retention, 0–60
   GFS points, both storage types, single- and multi-year), but the design
-  needs a defined answer regardless.
+  needs a defined answer regardless. **Correction (2026-07-21):** that sweep
+  never drove `archiveTierDays` past `immutablePerfDays` with real GFS
+  points still younger than the threshold present in the data — the
+  production default (90 days) does exactly that, and hit this fallback on
+  every request. See the D2 amendment above; this path should now be rare
+  in practice (genuine leaks/omissions), not effectively guaranteed-unused.
 
 - **D7 — Error handling: per-call failures are unchanged; "detection
   failed" is a success-path notice, not an HTTP error.** Every call in the
@@ -247,7 +269,7 @@ Pure module (no `fetch` mocking, fixtures from `docs/evidence/sobr-archive-tier-
 - `buildPhantomCapacityInputs`: exact substitution asserted against a sample input.
 - `hasLeakedNonGfsPoints`: true using the "Mechanism risk" (threshold=20) fixture; false using "Mechanism check" (threshold=90).
 - `computeCorrectedThreshold`: the `days=90` case (`maxNonGfsDay=91` → `92`).
-- `isArchiveComplete`: true for a clean partition; true for the day-63 Immutability Tax fixture (a duplicate is present — tagged both `performanceTier` and `archiveTier` — but the function passes on plain membership alone, since the `archiveTier` tag is there regardless of the duplicate); false for a hand-built fixture with a day missing from `archiveTier` entirely (synthetic — never observed live, but proves the function detects a real omission rather than always passing).
+- `isArchiveComplete(response, threshold)`: true for a clean partition; true for the day-63 Immutability Tax fixture (a duplicate is present — tagged both `performanceTier` and `archiveTier` — but the function passes on plain membership alone, since the `archiveTier` tag is there regardless of the duplicate); false for a hand-built fixture with a day past the threshold missing from `archiveTier` entirely (synthetic — never observed live, but proves the function detects a real omission rather than always passing); true for a live-API-shaped fixture (defaults, `archiveTierDays: 90`) where the day-63 GFS point hasn't aged past the threshold and correctly stays `performanceTier`-only — this is the regression case for the 2026-07-21 amendment above.
 
 BFF orchestration (`vi.stubGlobal("fetch", ...)`, extending the existing pattern in `vault-sizer.test.ts`):
 

@@ -412,6 +412,92 @@ describe("onRequestPost", () => {
     expect(sentBody.archiveTierDays).toBe(0);
   });
 
+  it("default-config repro: a young GFS point below the 90-day threshold correctly stays unarchived, one fetch, no failed notice", async () => {
+    // Captured shape (trimmed) from the live calculator API for the app's
+    // actual defaults: sourceTB 10, days (short-term retention) 30, weeklies
+    // 4, monthlies 12, yearlies 1 (capped from 3 by the 1-year Forecast
+    // Horizon), immutablePerfDays 30, archiveTierDays 90, Vault Azure
+    // Performance Tier, no Capacity Tier. The first distinct monthly GFS
+    // point (M2, day 63) is 27 days short of the 90-day threshold and
+    // legitimately stays performanceTier-only; every GFS day past the
+    // threshold (M3 day 98 onward) is tagged archiveTier. This must resolve
+    // as a clean, non-triggering result — not a failed notice.
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify(
+          makeUpstreamResponse(
+            [
+              { diskGB: 13911.04, diskPurpose: 3 },
+              { diskGB: 13235.2, diskPurpose: 4 },
+              { diskGB: 0, diskPurpose: 13 },
+            ],
+            [
+              {
+                pointType: "performanceTier",
+                day: 35,
+                backupCapacity: 0.1,
+                isFull: true,
+                isGFS: false,
+                isImmutable: false,
+                flags: "M1",
+              },
+              {
+                pointType: "performanceTier",
+                day: 63,
+                backupCapacity: 5.5,
+                isFull: true,
+                isGFS: true,
+                isImmutable: false,
+                flags: "M2",
+              },
+              {
+                pointType: "archiveTier",
+                day: 98,
+                backupCapacity: 0.82,
+                isFull: true,
+                isGFS: true,
+                isImmutable: false,
+                flags: "M3",
+              },
+              {
+                pointType: "archiveTier",
+                day: 371,
+                backupCapacity: 0.9,
+                isFull: true,
+                isGFS: true,
+                isImmutable: false,
+                flags: "M12 Y1",
+              },
+            ],
+          ),
+        ),
+        { status: 200 },
+      ),
+    );
+
+    const response = await onRequestPost(
+      postRequest({
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: archiveOnlySobrConfig,
+      }),
+    );
+    const body = await response.json();
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(body.success).toBe(true);
+    expect(body.archiveTierNotice).toBeUndefined();
+
+    // Confirms the real default config assembles the exact phantom-tier
+    // request the live-API repro validated — not just that a mock response
+    // shaped like it resolves cleanly.
+    const [, init] = vi.mocked(fetch).mock.calls[0];
+    const sentBody = JSON.parse((init as RequestInit).body as string);
+    expect(sentBody.moveCapacityTierEnabled).toBe(true);
+    expect(sentBody.capacityTierDays).toBe(90);
+    expect(sentBody.archiveTierDays).toBe(0);
+    expect(sentBody.objectStorage).toBe(true);
+  });
+
   it("triggering config, phantom call clean, floor raises threshold above user's own archiveTierDays: one fetch, adjusted notice", async () => {
     const loweredMoveDaysConfig: RepositoryConfigValues = {
       ...archiveOnlySobrConfig,

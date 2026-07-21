@@ -72,21 +72,34 @@ export function computeCorrectedThreshold(
 }
 
 /**
- * Plain day-set membership: every isGFS:true day in the response appears
- * (at least once) tagged pointType "archiveTier". Matches
- * docs/evidence/sobr-archive-tier-no-capacity/README.md's own conclusion
- * — a single response is sufficient because isGFS/day assignment is
- * stable across different threshold values on the same dataset.
+ * Threshold-aware day-set membership: every isGFS:true day *older than the
+ * threshold actually sent* (day > threshold) must appear (at least once)
+ * tagged pointType "archiveTier". GFS days at or under the threshold
+ * haven't crossed the phantom Capacity Tier's move boundary yet and
+ * legitimately stay performanceTier-only — not a completeness failure.
+ * Live-API repro: with the app's defaults (archiveTierDays 90), the first
+ * distinct monthly GFS point sits at day 63 and correctly stays
+ * unarchived; a plain (threshold-unaware) day-set check flagged every
+ * archiveTierDays past 62 as a false failure. See
+ * docs/evidence/sobr-archive-tier-no-capacity/README.md's "Threshold-aware
+ * completeness" finding.
+ *
+ * `threshold` must be the exact capacityTierDays value used in the request
+ * that produced `response` (finalThreshold in the caller) — the boundary
+ * the engine actually moved against, not the user's raw archiveTierDays.
  */
-export function isArchiveComplete(response: CVmAgentReturnObject): boolean {
+export function isArchiveComplete(
+  response: CVmAgentReturnObject,
+  threshold: number,
+): boolean {
   const points = response.restorePoints ?? [];
-  const gfsDays = points
-    .filter((point) => point.isGFS)
+  const gfsDaysRequiringArchive = points
+    .filter((point) => point.isGFS && point.day > threshold)
     .map((point) => point.day);
   const archivedDays = new Set(
     points
       .filter((point) => point.pointType === "archiveTier")
       .map((point) => point.day),
   );
-  return gfsDays.every((day) => archivedDays.has(day));
+  return gfsDaysRequiringArchive.every((day) => archivedDays.has(day));
 }

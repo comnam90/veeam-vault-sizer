@@ -165,7 +165,7 @@ describe("computeCorrectedThreshold", () => {
 });
 
 describe("isArchiveComplete", () => {
-  it("is true when every isGFS:true day is tagged archiveTier", () => {
+  it("is true when every isGFS:true day older than the threshold is tagged archiveTier", () => {
     const response = makeResponse(
       [],
       [
@@ -187,7 +187,7 @@ describe("isArchiveComplete", () => {
         },
       ],
     );
-    expect(isArchiveComplete(response)).toBe(true);
+    expect(isArchiveComplete(response, 90)).toBe(true);
   });
 
   it("is true for the Immutability Tax duplicate (day 63, tagged both performanceTier and archiveTier)", () => {
@@ -214,10 +214,10 @@ describe("isArchiveComplete", () => {
         },
       ],
     );
-    expect(isArchiveComplete(response)).toBe(true);
+    expect(isArchiveComplete(response, 60)).toBe(true);
   });
 
-  it("is false when a GFS day is missing an archiveTier tag entirely", () => {
+  it("is false when a GFS day older than the threshold is missing an archiveTier tag entirely", () => {
     const response = makeResponse(
       [],
       [
@@ -239,7 +239,7 @@ describe("isArchiveComplete", () => {
         },
       ],
     );
-    expect(isArchiveComplete(response)).toBe(false);
+    expect(isArchiveComplete(response, 90)).toBe(false);
   });
 
   it("is true (vacuously) when there are no GFS points at all", () => {
@@ -256,6 +256,77 @@ describe("isArchiveComplete", () => {
         },
       ],
     );
-    expect(isArchiveComplete(response)).toBe(true);
+    expect(isArchiveComplete(response, 90)).toBe(true);
+  });
+
+  it("is true when a GFS day hasn't aged past the threshold yet and correctly sits unarchived in Performance", () => {
+    // Live-API repro (defaults: sourceTB 10, days 30, weeklies 4, monthlies
+    // 12, yearlies 1, immutablePerfDays 30, archiveTierDays 90 -> phantom
+    // capacityTierDays 90): the first distinct monthly GFS point (M2) lands
+    // on day 63, 27 days short of the 90-day threshold. It correctly stays
+    // performanceTier-only — not yet old enough to move — while every GFS
+    // day past the threshold (M3 day 98 onward) is tagged archiveTier. The
+    // old day-set-membership check flagged this as incomplete; it isn't.
+    const response = makeResponse(
+      [],
+      [
+        {
+          pointType: "performanceTier",
+          day: 35,
+          backupCapacity: 0.1,
+          isFull: true,
+          isGFS: false,
+          isImmutable: false,
+          flags: "M1",
+        },
+        {
+          pointType: "performanceTier",
+          day: 63,
+          backupCapacity: 5.5,
+          isFull: true,
+          isGFS: true,
+          isImmutable: false,
+          flags: "M2",
+        },
+        {
+          pointType: "archiveTier",
+          day: 98,
+          backupCapacity: 0.82,
+          isFull: true,
+          isGFS: true,
+          isImmutable: false,
+          flags: "M3",
+        },
+      ],
+    );
+    expect(isArchiveComplete(response, 90)).toBe(true);
+  });
+
+  it("is false when a GFS day past the threshold is missing archiveTier, even though a younger GFS day correctly sits unarchived", () => {
+    const response = makeResponse(
+      [],
+      [
+        {
+          pointType: "performanceTier",
+          day: 63,
+          backupCapacity: 5.5,
+          isFull: true,
+          isGFS: true,
+          isImmutable: false,
+          flags: "M2",
+        },
+        {
+          // Should be archiveTier (98 > 90) but isn't — a genuine leak.
+          pointType: "performanceTier",
+          day: 98,
+          backupCapacity: 0.82,
+          isFull: true,
+          isGFS: true,
+          isImmutable: false,
+          flags: "M3",
+        },
+      ],
+    );
+    expect(isArchiveComplete(response, 90)).toBe(false);
   });
 });
