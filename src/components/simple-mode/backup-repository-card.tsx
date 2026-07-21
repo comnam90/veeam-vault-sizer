@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { validateRepositoryConfig } from "@/lib/simple-mode/validate-repository-config";
 import { RepoTypePicker } from "./repo-type-picker";
 import { RetentionOverrideBlock } from "./retention-override-block";
@@ -55,12 +56,15 @@ function TargetRepositoryCard({
   );
 }
 
+const VALIDATION_ERROR_DEBOUNCE_MS = 200;
+
 export function BackupRepositoryCard({
   value,
   workloadData,
   onChange,
 }: BackupRepositoryCardProps) {
-  const errors = validateRepositoryConfig(value, workloadData);
+  const debouncedValue = useDebouncedValue(value, VALIDATION_ERROR_DEBOUNCE_MS);
+  const errors = validateRepositoryConfig(debouncedValue, workloadData);
   const backupPathGroupId = useId();
   const targetRepoGroupId = useId();
   const primaryImmutableId = useId();
