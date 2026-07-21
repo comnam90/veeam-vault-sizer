@@ -1,7 +1,7 @@
 {
   "name": "veeam-vault-sizer",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler pages dev --proxy 5173 --port 8788 --compatibility-date=2026-07-10 -- vite --port 5173 --strictPort",
