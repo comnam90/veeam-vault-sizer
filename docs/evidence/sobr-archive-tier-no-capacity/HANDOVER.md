@@ -142,3 +142,18 @@ not yet made.
   Export/.vseconfig work"). That's a benign context-recall artifact, not a
   new instruction — the user already redirected away from that pivot early
   on. Safe to ignore if it reappears.
+
+## Correction (2026-07-21): "New, separate, confirmed finding" above (tax fields) was wrong
+
+The 2026-07-17 update's claim that `getTotalStorageGB()` has a "confirmed
+~6% undercount" from ignoring `performanceTierImmutabilityTaxGB` /
+`capacityTierImmutabilityTaxGB` was filed as GitHub issue #11, then
+re-investigated and **reversed**. Restore-point-level reconciliation
+(response's own `restorePoints` vs. `repoCompute.compute.volumes` vs. the
+tax fields, checked against issue #11's own exact reproduction config on
+the live API) shows the tax capacity is already included in the relevant
+tier's `volumes.diskGB` — it is a decomposition of that volume, not
+additional capacity outside it. `getTotalStorageGB()` was already correct;
+no code was changed. Full detail and the reconciliation numbers are in
+README.md's "Correction (2026-07-21)" section, appended alongside this
+note. Issue #11 closed as invalid.

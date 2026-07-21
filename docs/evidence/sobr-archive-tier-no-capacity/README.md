@@ -330,3 +330,62 @@ node docs/evidence/sobr-archive-tier-no-capacity/probe.mjs --write-fixtures # re
 Raw response bodies for the two confirmed bugs and the phantom-tier
 mechanism check are captured alongside this file
 (`issue1-*.json`, `issue2-*.json`, `mechanism-G-*.json`).
+
+## Correction (2026-07-21): the "undercount" conclusion above was wrong — `getTotalStorageGB()` does not need the tax fields added
+
+Filed as GitHub issue #11 ("`getTotalStorageGB()` omits Veeam's Immutability
+Tax fields, undercounting total capacity") and investigated further before
+any code was changed. **The issue is invalid.** This document's own "New,
+separate finding" above and HANDOVER.md's "Update (2026-07-17)" section
+both asserted a "confirmed ~6% undercount" without checking whether the tax
+capacity was already folded into `volumes.diskGB` or genuinely additional.
+It was never checked against restore-point-level ground truth — that check
+now reverses the conclusion.
+
+**What was verified this time:** the live upstream API was queried with
+issue #11's own exact reproduction config (10 TB source, 3% change, 50%
+reduction, 10% yearly growth, 1-year project, 30-day short-term retention,
+14-day Performance Tier immutability, object storage, Capacity Tier move at
+60 days, Archive Tier move at 0 days, 12 monthly / 1 yearly GFS), and the
+response's own `restorePoints` array was reconciled against its
+`repoCompute.compute.volumes` and `performanceTierImmutabilityTaxGB`:
+
+```
+performanceTier volume (diskGB):        13,911.04
+sum of performanceTier restore points:  12,221.44
+performanceTierImmutabilityTaxGB:        1,689.60
+
+12,221.44 + 1,689.60 = 13,911.04   ← exact match (to floating-point rounding)
+```
+
+The tax amount is **already inside** the tier volume `getTotalStorageGB()`
+sums — it is not additional capacity sitting outside it. The same identity
+(`tier volume − Σ restore points of that pointType == tax field`) was
+confirmed on two other fixtures already in this directory
+(`issue2-E-s3compatible-archive-90d.json`,
+`issue2-E0-s3compatible-archive-off.json`), both exact.
+
+This means `performanceTierImmutabilityTaxGB` /
+`capacityTierImmutabilityTaxGB` are **decomposition labels** — "of this
+tier's total, this much is attributable to the immutability lock" — not
+amounts to add on top of the tier total. The "New, separate finding"
+section above, and the corresponding item in HANDOVER.md's 2026-07-17
+update, are superseded by this correction: `getTotalStorageGB()` already
+reports the correct total; adding the tax fields to it (as issue #11
+proposed) would have produced a ~6% **over**-count, a new bug in place of
+a non-existent one.
+
+**Not re-verified:** this correction confirms the identity for
+`performanceTierImmutabilityTaxGB` (three samples). `capacityTierImmutabilityTaxGB`
+was `0` in all three, so the identical claim for the capacity-tier tax
+field is untested — don't generalize "always folded in" to `capTax` without
+a spot-check against a non-zero-`capTax` config.
+
+**Legitimate future use of these fields:** a later, explicitly deferred
+feature — a stacked per-tier breakdown showing how much of a tier's volume
+is daily-chain data vs. weekly/monthly/yearly GFS vs. immutability-locked
+capacity — would read these fields as one of the stack's components, not
+as an addend to the grand total. No such feature is scoped or planned as
+part of this investigation.
+
+GitHub issue #11 closed as invalid; no production code changed.
