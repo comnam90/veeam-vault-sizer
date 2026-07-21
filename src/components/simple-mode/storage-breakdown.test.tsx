@@ -135,4 +135,46 @@ describe("StorageBreakdown", () => {
 
     expect(screen.getByText("Performance")).toBeInTheDocument();
   });
+
+  it("ignores transactions and restorePoints entirely, even when they carry capacity-tagged data — only volumes drives tier rows", () => {
+    const data: CVmAgentReturnObject = {
+      totalStorageTB: 0,
+      workspaceGB: 0,
+      performanceTierImmutabilityTaxGB: 0,
+      capacityTierImmutabilityTaxGB: 0,
+      repoCompute: {
+        compute: {
+          cores: 2,
+          ram: 8,
+          // No Capacity Tier volume entry at all — the phantom-tier request
+          // this data plausibly came from used Capacity Tier internally,
+          // but it must never surface as a rendered tier.
+          volumes: [{ diskGB: 2048, diskPurpose: 3 }],
+        },
+      },
+      transactions: {
+        capacityTierTransactions: {
+          firstMonthTransactions: 999,
+          secondMonthTransactions: 999,
+          finalMonthTransactions: 999,
+        },
+      },
+      restorePoints: [
+        {
+          pointType: "capacityTier",
+          day: 60,
+          backupCapacity: 5,
+          isFull: true,
+          isGFS: true,
+          isImmutable: false,
+        },
+      ],
+    };
+
+    render(<StorageBreakdown data={data} />);
+
+    expect(screen.getByText("Performance")).toBeInTheDocument();
+    expect(screen.queryByText("Capacity")).not.toBeInTheDocument();
+    expect(screen.queryByText("Archive")).not.toBeInTheDocument();
+  });
 });

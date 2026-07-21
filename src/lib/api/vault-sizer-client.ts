@@ -26,8 +26,17 @@ export async function callVaultSizerApi(
   }
 
   if (body.mode === "direct") {
-    return { mode: "direct", data: body.data };
+    return {
+      mode: "direct",
+      data: body.data,
+      archiveTierNotice: body.archiveTierNotice,
+    };
   }
 
-  return { mode: "copy", primary: body.primary, secondary: body.secondary };
+  return {
+    mode: "copy",
+    primary: body.primary,
+    secondary: body.secondary,
+    archiveTierNotice: body.archiveTierNotice,
+  };
 }

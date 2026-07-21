@@ -379,4 +379,78 @@ describe("ProjectedSizingCard", () => {
     // DEFAULT_REPOSITORY_CONFIG_VALUES.targetRepository is "vault-azure".
     expect(screen.getByText("Primary Repository")).toBeInTheDocument();
   });
+
+  it("renders the adjusted-threshold note when archiveTierNotice.status is adjusted", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "direct",
+        data: mockData,
+        archiveTierNotice: { status: "adjusted", effectiveThresholdDays: 30 },
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(
+        screen.getByText(/adjusted internally to 30 days/i),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("renders the hard disclaimer when archiveTierNotice.status is failed", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({
+        success: true,
+        mode: "direct",
+        data: mockData,
+        archiveTierNotice: { status: "failed" },
+      }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        /couldn't be fully verified/i,
+      ),
+    );
+  });
+
+  it("renders no notice when archiveTierNotice is absent", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, mode: "direct", data: mockData }),
+    );
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        onChange={() => {}}
+      />,
+    );
+
+    // Wait for real data to actually render first — otherwise the queryBy
+    // assertions below would trivially pass before the fetch even resolves.
+    await vi.waitFor(() =>
+      expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0),
+    );
+    expect(screen.queryByText(/adjusted internally/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/couldn't be fully verified/i),
+    ).not.toBeInTheDocument();
+  });
 });
