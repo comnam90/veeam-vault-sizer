@@ -34,3 +34,9 @@ Simple Mode serves as a high-fidelity SE Engineering Workbench. Visual layout de
 - JetBrains Mono is reserved specifically for alignment-sensitive data — IP addresses, file paths, storage capacity values — not general UI text (Inter is the UI typeface).
 - Two density modes exist: "Comfortable" (default) and "Compact" (halves vertical padding in tables/lists), intended for dense utility views like job mapping tables.
 - Depth is conveyed via tonal layering and low-contrast outlines/borders, not shadows — keep elevation subtle and enterprise-feeling rather than decorative.
+
+## Git conventions
+
+- **Commits**: Conventional Commits (`type(scope): subject`, e.g. `fix:`, `feat:`, `docs:`, `chore:`, `refactor:`, `test:`). Enforced by a `commit-msg` husky hook running `commitlint` against `@commitlint/config-conventional` (see `commitlint.config.js`) — non-conforming messages are rejected at commit time, not just in review.
+- **Branches**: name branches the same way, `type/short-description` (e.g. `fix/tax-field-total`, `docs/evidence-correction`) — not tooling-enforced yet, but follow it by convention.
+- **PRs**: title PRs like a conventional commit subject too (e.g. `fix: ...`, `docs: ...`). This repo squash-merges PRs, and the PR title becomes the squash commit message on `main` — an unconventional PR title produces an unconventional commit in history even if every individual commit on the branch was conventional.
