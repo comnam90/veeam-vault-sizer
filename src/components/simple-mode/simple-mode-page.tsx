@@ -47,7 +47,7 @@ export function SimpleModePage() {
     !hasCurrentValidationErrors;
 
   function handleSnapshot() {
-    if (data === null || hasCurrentValidationErrors) return;
+    if (!canSnapshot) return;
     nextSnapshotNumberRef.current += 1;
     setSnapshots((prev) => [
       ...prev,

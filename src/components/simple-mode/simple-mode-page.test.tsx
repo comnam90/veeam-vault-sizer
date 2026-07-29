@@ -147,7 +147,7 @@ describe("SimpleModePage", () => {
     await user.click(snapshotButton);
 
     expect(screen.getByDisplayValue("Snapshot 2")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue("Snapshot 3")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Snapshot 3")).toBeInTheDocument();
     // Exactly one input reads "Snapshot 2" — no collision/duplicate.
     expect(screen.getAllByDisplayValue("Snapshot 2")).toHaveLength(1);
   });
@@ -188,6 +188,11 @@ describe("SimpleModePage", () => {
     });
     await vi.waitFor(() => expect(snapshotButton).toBeEnabled());
 
+    // Create "Snapshot 1" while the form is valid, so there's a real
+    // snapshot present for the guard to (wrongly) add alongside.
+    await user.click(snapshotButton);
+    expect(screen.getByDisplayValue("Snapshot 1")).toBeInTheDocument();
+
     // Make the current form invalid without changing `data` (which stays
     // stale from the last successful calculation).
     const sourceSizeInput = screen.getByLabelText(/source data size/i);
@@ -196,11 +201,11 @@ describe("SimpleModePage", () => {
     await vi.waitFor(() => expect(snapshotButton).toBeDisabled());
 
     // A stray click on a disabled button is a no-op in the DOM, but assert
-    // the handler's own guard too by confirming no snapshot is created.
+    // the handler's own guard too by confirming no second snapshot is
+    // created.
     await user.click(snapshotButton);
-    expect(
-      screen.queryByDisplayValue(/^Snapshot \d+$/),
-    ).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("Snapshot 1")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Snapshot 2")).not.toBeInTheDocument();
   });
 
   it("keeps a snapshot's stored values unchanged after the live form is edited further", async () => {
