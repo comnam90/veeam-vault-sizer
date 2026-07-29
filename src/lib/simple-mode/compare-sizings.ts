@@ -1,10 +1,14 @@
 import { calculateInitialFullBandwidth } from "./calculate-initial-full-bandwidth";
 import { formatThroughputMbps } from "./format-throughput";
 import { getTierStorageRows, getTotalStorageGB } from "./storage-tiers";
-import type {
-  RepositoryConfigValues,
-  SizerResult,
-  WorkloadDataValues,
+import {
+  REPO_TYPE_LABEL,
+  type ArchiveTierConfig,
+  type CapacityTierConfig,
+  type RepositoryConfigValues,
+  type RetentionOverride,
+  type SizerResult,
+  type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
@@ -176,4 +180,163 @@ export function getWorkloadDataComparisonRows(
     label,
     values: entries.map((entry) => get(entry.workloadData)),
   }));
+}
+
+function formatCapacityTierPolicy(tier: CapacityTierConfig): string {
+  // copyPolicy and movePolicy are independent booleans (two separate
+  // checkboxes in sobr-builder.tsx) — Veeam SOBR allows Copy and Move to
+  // run together, and DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier
+  // ships with both true. A policy?"Copy":policy?"Move":"—" ternary would
+  // silently drop "Move" whenever both are set, which is the common case,
+  // not an edge case — so all four combinations are named explicitly.
+  if (tier.copyPolicy && tier.movePolicy) return "Copy + Move";
+  if (tier.copyPolicy) return "Copy";
+  if (tier.movePolicy) return "Move";
+  return "—";
+}
+
+function formatCapacityTier(tier: CapacityTierConfig): string {
+  const policy = formatCapacityTierPolicy(tier);
+  return `${REPO_TYPE_LABEL[tier.type]}, ${policy}, move at ${tier.moveDays}d, immutable ${tier.immutableDays}d`;
+}
+
+function formatArchiveTier(tier: ArchiveTierConfig): string {
+  const standalone = tier.standaloneFullBackups ? ", standalone fulls" : "";
+  return `move at ${tier.moveDays}d, immutable ${tier.immutableDays}d${standalone}`;
+}
+
+function formatRetentionOverride(retention: RetentionOverride): string | null {
+  if (!retention.customizeRetention) return null;
+  return `${retention.retentionDays}d + ${retention.gfsWeekly}w / ${retention.gfsMonthly}m / ${retention.gfsYearly}y`;
+}
+
+function getPrimaryTargetConfigRows(entries: CompareEntry[]): ComparisonRow[] {
+  const rows: ComparisonRow[] = [
+    {
+      label: "Primary — Repository Type",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        const repoType =
+          repositoryConfig.backupPath === "copy"
+            ? repositoryConfig.primary.repoType
+            : repositoryConfig.targetRepository === "sobr"
+              ? repositoryConfig.sobr.performanceType
+              : repositoryConfig.targetRepository;
+        return REPO_TYPE_LABEL[repoType];
+      }),
+    },
+    {
+      label: "Primary — Immutable (Days)",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        return repositoryConfig.backupPath === "copy"
+          ? repositoryConfig.primary.immutableDays
+          : repositoryConfig.targetRepository === "sobr"
+            ? repositoryConfig.sobr.performanceImmutableDays
+            : repositoryConfig.targetRepositoryImmutableDays;
+      }),
+    },
+    {
+      label: "Primary — Capacity Tier",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath === "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        if (!repositoryConfig.sobr.capacityTier.enabled) return null;
+        return formatCapacityTier(repositoryConfig.sobr.capacityTier);
+      }),
+    },
+    {
+      label: "Primary — Archive Tier",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath === "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        if (!repositoryConfig.sobr.archiveTier.enabled) return null;
+        return formatArchiveTier(repositoryConfig.sobr.archiveTier);
+      }),
+    },
+    {
+      label: "Primary — Retention Override",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        return formatRetentionOverride(repositoryConfig.primary.retention);
+      }),
+    },
+  ];
+
+  return rows.filter((row) => row.values.some((value) => value !== null));
+}
+
+function getSecondaryConfigRows(entries: CompareEntry[]): ComparisonRow[] {
+  const rows: ComparisonRow[] = [
+    {
+      label: "Secondary — Repository Type",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        return REPO_TYPE_LABEL[
+          repositoryConfig.targetRepository === "sobr"
+            ? repositoryConfig.sobr.performanceType
+            : repositoryConfig.targetRepository
+        ];
+      }),
+    },
+    {
+      label: "Secondary — Immutable (Days)",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        return repositoryConfig.targetRepository === "sobr"
+          ? repositoryConfig.sobr.performanceImmutableDays
+          : repositoryConfig.targetRepositoryImmutableDays;
+      }),
+    },
+    {
+      label: "Secondary — Capacity Tier",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        if (!repositoryConfig.sobr.capacityTier.enabled) return null;
+        return formatCapacityTier(repositoryConfig.sobr.capacityTier);
+      }),
+    },
+    {
+      label: "Secondary — Archive Tier",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        if (!repositoryConfig.sobr.archiveTier.enabled) return null;
+        return formatArchiveTier(repositoryConfig.sobr.archiveTier);
+      }),
+    },
+    {
+      label: "Secondary — Retention Override",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        return formatRetentionOverride(repositoryConfig.secondaryRetention);
+      }),
+    },
+  ];
+
+  return rows.filter((row) => row.values.some((value) => value !== null));
+}
+
+export function getRepositoryConfigComparisonRows(
+  entries: CompareEntry[],
+): ComparisonRow[] {
+  return [
+    {
+      label: "Backup Path",
+      values: entries.map((entry) =>
+        entry.repositoryConfig.backupPath === "copy" ? "Copy" : "Direct",
+      ),
+    },
+    ...getPrimaryTargetConfigRows(entries),
+    ...getSecondaryConfigRows(entries),
+  ];
 }

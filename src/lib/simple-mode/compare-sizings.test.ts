@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getRepositoryConfigComparisonRows,
   getSizingComparisonRows,
   getTotalRequiredStorageTB,
   getWorkloadDataComparisonRows,
@@ -286,5 +287,284 @@ describe("getWorkloadDataComparisonRows", () => {
     expect(
       rows.find((row) => row.label === "Cap GFS to Forecast Horizon")?.values,
     ).toEqual(["On", "Off"]);
+  });
+});
+
+describe("getRepositoryConfigComparisonRows", () => {
+  it("always shows Backup Path", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Copy",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(rows.find((row) => row.label === "Backup Path")?.values).toEqual([
+      "Direct",
+      "Copy",
+    ]);
+  });
+
+  it("shows Primary — Repository Type from targetRepository in direct mode, and from primary.repoType in copy mode", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Copy",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    // DEFAULT targetRepository is "vault-azure"; DEFAULT primary.repoType is "hardened-repository".
+    expect(
+      rows.find((row) => row.label === "Primary — Repository Type")?.values,
+    ).toEqual(["Vault Azure", "Hardened Repository"]);
+  });
+
+  it("omits Primary — Capacity Tier for entries where it isn't enabled, and shows it for entries where it is", () => {
+    const withCapacity: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          type: "aws-s3",
+          moveDays: "45",
+        },
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "No capacity",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "With capacity",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: withCapacity,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const capacityRow = rows.find(
+      (row) => row.label === "Primary — Capacity Tier",
+    );
+    expect(capacityRow?.values[0]).toBeNull();
+    expect(capacityRow?.values[1]).toContain("AWS S3");
+    expect(capacityRow?.values[1]).toContain("45");
+  });
+
+  it("names Copy Policy and Move Policy independently in Primary — Capacity Tier, since both can be enabled together", () => {
+    // DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier ships with BOTH
+    // copyPolicy and movePolicy true — this is the default, not a hand-picked
+    // edge case, and a naive copyPolicy?"Copy":movePolicy?"Move":"—" ternary
+    // would silently render just "Copy" here, hiding that Move also applies.
+    const bothPolicies: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+        },
+      },
+    };
+    const moveOnly: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: false,
+          movePolicy: true,
+        },
+      },
+    };
+    const copyOnly: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: true,
+          movePolicy: false,
+        },
+      },
+    };
+    const neither: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: false,
+          movePolicy: false,
+        },
+      },
+    };
+
+    const entries: CompareEntry[] = [
+      {
+        label: "Both",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: bothPolicies,
+        data: null,
+      },
+      {
+        label: "Move only",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: moveOnly,
+        data: null,
+      },
+      {
+        label: "Copy only",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyOnly,
+        data: null,
+      },
+      {
+        label: "Neither",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: neither,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const capacityRow = rows.find(
+      (row) => row.label === "Primary — Capacity Tier",
+    );
+
+    expect(capacityRow?.values[0]).toContain("Copy + Move");
+    expect(capacityRow?.values[1]).toContain("Move");
+    expect(capacityRow?.values[1]).not.toContain("Copy");
+    expect(capacityRow?.values[2]).toContain("Copy");
+    expect(capacityRow?.values[2]).not.toContain("Move");
+    expect(capacityRow?.values[3]).toContain("—");
+  });
+
+  it("shows Secondary rows only for copy-mode entries", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Copy",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const secondaryType = rows.find(
+      (row) => row.label === "Secondary — Repository Type",
+    );
+    expect(secondaryType?.values[0]).toBeNull();
+    expect(secondaryType?.values[1]).toBe("Vault Azure"); // DEFAULT targetRepository, reused for Secondary in copy mode
+  });
+
+  it("omits every Secondary row entirely for a direct-mode-only comparison", () => {
+    // Mirrors Task 3's equivalent assertion for the sizing table — the same
+    // "omit for direct-only" filter logic exists here too and needs its own
+    // coverage, not just an assertion that one Secondary row's *value* is
+    // null for one entry.
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct A",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Direct B",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          targetRepositoryImmutableDays: "45",
+        },
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(rows.some((row) => row.label.startsWith("Secondary"))).toBe(false);
+  });
+
+  it("shows Primary — Retention Override only when primary.retention.customizeRetention is true", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      primary: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.primary,
+        retention: {
+          customizeRetention: true,
+          retentionDays: "45",
+          gfsWeekly: "1",
+          gfsMonthly: "2",
+          gfsYearly: "0",
+        },
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "No override",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        },
+        data: null,
+      },
+      {
+        label: "Override",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const retentionRow = rows.find(
+      (row) => row.label === "Primary — Retention Override",
+    );
+    expect(retentionRow?.values[0]).toBeNull();
+    expect(retentionRow?.values[1]).toBe("45d + 1w / 2m / 0y");
   });
 });
