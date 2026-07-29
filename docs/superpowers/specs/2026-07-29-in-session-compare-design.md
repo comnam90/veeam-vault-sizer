@@ -37,7 +37,7 @@ Freezing the computed result, rather than only the inputs, matters for two reaso
 
 ### Creating a snapshot
 
-A "Snapshot current sizing" button fills the `actions` placeholder already scaffolded in `ProjectedSizingCard` (`projected-sizing-card.tsx:161-164`). Clicking it appends a new `Snapshot` to the list, auto-labeled `Snapshot N`. The button is disabled whenever `isLoading` is true or `error` is set — a snapshot can't be taken of a stale or failed calculation.
+A "Snapshot current sizing" button fills the `actions` placeholder already scaffolded in `ProjectedSizingCard` (`projected-sizing-card.tsx:161-164`). Clicking it appends a new `Snapshot` to the list, auto-labeled `Snapshot N`. The button is disabled whenever `isLoading` is true, `error` is set, or `data` is `null` — a snapshot can't be taken of a stale, failed, or not-yet-computed calculation (the third case covers first load, and any moment validation errors keep the hook from ever dispatching).
 
 ### Browsing snapshots
 
@@ -99,7 +99,7 @@ The roadmap line for this item reads "hold the current sizing alongside a tweake
 Per `superpowers:test-driven-development`, tests precede implementation for:
 
 - Snapshot creation appends the frozen value, not a live reference (mutating live state after snapshotting must not change the snapshot).
-- The "Snapshot" button disables during `isLoading` and on `error`.
+- The "Snapshot" button disables during `isLoading`, on `error`, and while `data` is `null`.
 - Checkbox selection caps at 2; a 3rd checkbox is disabled until one is unchecked.
 - The sizing comparison renders the correct row set for mixed Direct/Copy selections, with N/A cells where applicable (including Primary vs. Secondary grouping and Capacity/Archive tier applicability).
 - The Workload Data and Repository Configuration sections default to collapsed, and the Repository Configuration section's row set follows the same conditional-applicability rule as the sizing comparison (SOBR-only, tier-enabled-only, and retention-override-only fields blank out correctly).

@@ -489,6 +489,14 @@ function getTierRowsForRole(
   })).filter((row) => row.values.some((value) => value !== null));
 }
 
+// Derived from workloadData alone — genuinely role-independent, not a bug.
+// This means a copy-mode entry's Primary and Secondary "Initial Full /
+// Restore" rows will show the identical figure twice; that matches
+// projected-sizing-card.tsx's existing behavior today (it passes this same
+// `initialFullRestore` value to both SiteSizingSections), which is what the
+// spec's "reproduces every figure SiteSizingSection shows today" commits to.
+// Don't "fix" this into two independently-computed numbers without a
+// separate design decision — there's no per-role bandwidth split to derive it from.
 function getEntryInitialFullRestore(entry: CompareEntry) {
   return calculateInitialFullBandwidth(
     entry.workloadData.sourceSizeTB,
@@ -835,6 +843,101 @@ describe("getRepositoryConfigComparisonRows", () => {
     expect(capacityRow?.values[1]).toContain("45");
   });
 
+  it("names Copy Policy and Move Policy independently in Primary — Capacity Tier, since both can be enabled together", () => {
+    // DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier ships with BOTH
+    // copyPolicy and movePolicy true — this is the default, not a hand-picked
+    // edge case, and a naive copyPolicy?"Copy":movePolicy?"Move":"—" ternary
+    // would silently render just "Copy" here, hiding that Move also applies.
+    const bothPolicies: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+        },
+      },
+    };
+    const moveOnly: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: false,
+          movePolicy: true,
+        },
+      },
+    };
+    const copyOnly: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: true,
+          movePolicy: false,
+        },
+      },
+    };
+    const neither: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          copyPolicy: false,
+          movePolicy: false,
+        },
+      },
+    };
+
+    const entries: CompareEntry[] = [
+      {
+        label: "Both",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: bothPolicies,
+        data: null,
+      },
+      {
+        label: "Move only",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: moveOnly,
+        data: null,
+      },
+      {
+        label: "Copy only",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyOnly,
+        data: null,
+      },
+      {
+        label: "Neither",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: neither,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const capacityRow = rows.find(
+      (row) => row.label === "Primary — Capacity Tier",
+    );
+
+    expect(capacityRow?.values[0]).toContain("Copy + Move");
+    expect(capacityRow?.values[1]).toContain("Move");
+    expect(capacityRow?.values[1]).not.toContain("Copy");
+    expect(capacityRow?.values[2]).toContain("Copy");
+    expect(capacityRow?.values[2]).not.toContain("Move");
+    expect(capacityRow?.values[3]).toContain("—");
+  });
+
   it("shows Secondary rows only for copy-mode entries", () => {
     const copyConfig: RepositoryConfigValues = {
       ...DEFAULT_REPOSITORY_CONFIG_VALUES,
@@ -860,6 +963,32 @@ describe("getRepositoryConfigComparisonRows", () => {
     );
     expect(secondaryType?.values[0]).toBeNull();
     expect(secondaryType?.values[1]).toBe("Vault Azure"); // DEFAULT targetRepository, reused for Secondary in copy mode
+  });
+
+  it("omits every Secondary row entirely for a direct-mode-only comparison", () => {
+    // Mirrors Task 3's equivalent assertion for the sizing table — the same
+    // "omit for direct-only" filter logic exists here too and needs its own
+    // coverage, not just an assertion that one Secondary row's *value* is
+    // null for one entry.
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct A",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Direct B",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          targetRepositoryImmutableDays: "45",
+        },
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(rows.some((row) => row.label.startsWith("Secondary"))).toBe(false);
   });
 
   it("shows Primary — Retention Override only when primary.retention.customizeRetention is true", () => {
@@ -928,8 +1057,21 @@ import {
 Then append the rest to `compare-sizings.ts`:
 
 ```ts
+function formatCapacityTierPolicy(tier: CapacityTierConfig): string {
+  // copyPolicy and movePolicy are independent booleans (two separate
+  // checkboxes in sobr-builder.tsx) — Veeam SOBR allows Copy and Move to
+  // run together, and DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier
+  // ships with both true. A policy?"Copy":policy?"Move":"—" ternary would
+  // silently drop "Move" whenever both are set, which is the common case,
+  // not an edge case — so all four combinations are named explicitly.
+  if (tier.copyPolicy && tier.movePolicy) return "Copy + Move";
+  if (tier.copyPolicy) return "Copy";
+  if (tier.movePolicy) return "Move";
+  return "—";
+}
+
 function formatCapacityTier(tier: CapacityTierConfig): string {
-  const policy = tier.copyPolicy ? "Copy" : tier.movePolicy ? "Move" : "—";
+  const policy = formatCapacityTierPolicy(tier);
   return `${REPO_TYPE_LABEL[tier.type]}, ${policy}, move at ${tier.moveDays}d, immutable ${tier.immutableDays}d`;
 }
 
@@ -1078,7 +1220,7 @@ export function getRepositoryConfigComparisonRows(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/lib/simple-mode/compare-sizings.test.ts`
-Expected: PASS (14 tests)
+Expected: PASS (16 tests)
 
 - [ ] **Step 5: Commit**
 
@@ -2048,6 +2190,10 @@ interface CompareDialogProps {
   entries: CompareEntry[];
 }
 
+// Cells key on column index, not entry.label — Task 9 makes snapshot labels
+// user-renameable, so two entries (e.g. two snapshots both renamed to the
+// same string) can share a label. Column order is stable while the dialog
+// is open, so index is a safe, collision-free key.
 function ComparisonTable({
   entries,
   rows,
@@ -2060,11 +2206,8 @@ function ComparisonTable({
       <thead>
         <tr className="border-border border-b">
           <th className="py-1.5 pr-2 text-left font-medium"> </th>
-          {entries.map((entry) => (
-            <th
-              key={entry.label}
-              className="py-1.5 pr-2 text-right font-medium"
-            >
+          {entries.map((entry, index) => (
+            <th key={index} className="py-1.5 pr-2 text-right font-medium">
               {entry.label}
             </th>
           ))}
@@ -2076,7 +2219,7 @@ function ComparisonTable({
             <td className="text-muted-foreground py-1.5 pr-2">{row.label}</td>
             {row.values.map((value, index) => (
               <td
-                key={`${row.label}-${entries[index].label}`}
+                key={`${row.label}-${index}`}
                 className="py-1.5 pr-2 text-right font-mono"
               >
                 {value ?? "—"}
@@ -2768,3 +2911,12 @@ If every check in Step 4 passes, the feature is complete and ready for `superpow
 **Placeholder scan:** no TBD/TODO; every code step has complete, runnable code; every test has real assertions.
 
 **Type consistency:** `Snapshot` (Task 1) → consumed identically in Task 9 (`SnapshotPanel` props), Task 10 (`handleSnapshot`/`handleRenameSnapshot`/`handleDeleteSnapshot`). `CompareEntry`/`ComparisonRow` (Task 3) → consumed identically in Task 8 (`CompareDialog`) and Task 9 (`SnapshotPanel`'s `live` prop and `compareEntries` construction). `SizerResult` (not `SizingResult`, correcting the spec's naming) used consistently from Task 3 onward. `formatThroughputMbps` (Task 2) is the single source of the MBps→Mbps conversion, used in both `network-bandwidth.tsx` and `compare-sizings.ts`.
+
+**Human review pass (post-self-review):** four issues found and fixed —
+
+1. **Blocking:** `formatCapacityTier` (Task 5) collapsed independent `copyPolicy`/`movePolicy` booleans into a single ternary, silently dropping "Move" whenever both are true — which is the _default_ config (`DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier` ships with both `true`), not a rare edge case. Fixed with `formatCapacityTierPolicy` covering all 4 combinations, tested explicitly (Task 5's new "names Copy Policy and Move Policy independently" test).
+2. **Blocking:** Task 5 had no test for Secondary-row omission in a direct-mode-only comparison, unlike Task 3's equivalent sizing-table coverage. Added ("omits every Secondary row entirely for a direct-mode-only comparison").
+3. **Non-blocking, documented:** Task 3's "Initial Full / Restore" figure is derived from `workloadData` alone, so Primary and Secondary rows show the identical number for a copy-mode entry — matches existing `projected-sizing-card.tsx` behavior, not a regression, but easy to mistake for a bug later. Added an inline comment on `getEntryInitialFullRestore` warning against "fixing" it without a separate design decision.
+4. **Minor:** `ComparisonTable` (Task 8) keyed cells and column headers on `entry.label`/`` `${row.label}-${entries[index].label}` ``, which collides once Task 9 makes labels user-renameable and two entries share a name. Switched both to index-based keys, with a comment explaining why.
+
+Also updated the design spec (`2026-07-29-in-session-compare-design.md`) to state the Snapshot button's disable condition precisely (`isLoading || error !== null || data === null`, not just the first two) — Task 7's implementation was already correct; the spec's wording was the thing lagging behind.
