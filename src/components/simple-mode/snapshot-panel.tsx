@@ -90,7 +90,7 @@ export function SnapshotPanel({
                       onRename(snapshot.id, event.target.value)
                     }
                     className="h-8 flex-1"
-                    aria-label={`Rename ${snapshot.label}`}
+                    aria-label="Rename snapshot label"
                   />
                   <span className="font-mono text-sm">
                     {totalTB === null ? "—" : `${totalTB.toFixed(1)} TB`}
