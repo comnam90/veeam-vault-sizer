@@ -1,4 +1,3 @@
-// src/components/simple-mode/snapshot-panel.tsx
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
