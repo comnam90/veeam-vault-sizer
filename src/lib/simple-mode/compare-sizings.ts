@@ -146,3 +146,34 @@ export function getSizingComparisonRows(
     ),
   ];
 }
+
+const WORKLOAD_DATA_FIELDS: {
+  label: string;
+  get: (w: WorkloadDataValues) => string;
+}[] = [
+  { label: "Source Size (TB)", get: (w) => w.sourceSizeTB },
+  { label: "Daily Change Rate (%)", get: (w) => w.dailyChangeRatePercent },
+  { label: "Data Reduction (%)", get: (w) => w.dataReductionPercent },
+  { label: "Yearly Growth (%)", get: (w) => w.yearlyGrowthPercent },
+  {
+    label: "Short-Term Retention (Days)",
+    get: (w) => w.shortTermRetentionDays,
+  },
+  { label: "GFS Weekly", get: (w) => w.gfsWeekly },
+  { label: "GFS Monthly", get: (w) => w.gfsMonthly },
+  { label: "GFS Yearly", get: (w) => w.gfsYearly },
+  { label: "Forecast Horizon (Years)", get: (w) => w.projectLengthYears },
+  {
+    label: "Cap GFS to Forecast Horizon",
+    get: (w) => (w.capGfsToForecastHorizon ? "On" : "Off"),
+  },
+];
+
+export function getWorkloadDataComparisonRows(
+  entries: CompareEntry[],
+): ComparisonRow[] {
+  return WORKLOAD_DATA_FIELDS.map(({ label, get }) => ({
+    label,
+    values: entries.map((entry) => get(entry.workloadData)),
+  }));
+}

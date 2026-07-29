@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getSizingComparisonRows,
   getTotalRequiredStorageTB,
+  getWorkloadDataComparisonRows,
   type CompareEntry,
 } from "./compare-sizings";
 import {
@@ -9,6 +10,7 @@ import {
   DEFAULT_WORKLOAD_DATA_VALUES,
   type RepositoryConfigValues,
   type SizerResult,
+  type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 
@@ -223,5 +225,66 @@ describe("getSizingComparisonRows", () => {
         row.label.startsWith("Primary — Initial Full / Restore"),
       )?.values,
     ).toEqual(["485.5 Mbps"]);
+  });
+});
+
+describe("getWorkloadDataComparisonRows", () => {
+  it("renders one row per WorkloadDataValues field, all applicable (no N/A)", () => {
+    const edited: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      sourceSizeTB: "20",
+      gfsWeekly: "2",
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Live",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Snapshot 1",
+        workloadData: edited,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+    ];
+    const rows = getWorkloadDataComparisonRows(entries);
+
+    expect(
+      rows.find((row) => row.label === "Source Size (TB)")?.values,
+    ).toEqual(["10", "20"]);
+    expect(rows.find((row) => row.label === "GFS Weekly")?.values).toEqual([
+      "4",
+      "2",
+    ]);
+    expect(
+      rows.every((row) => row.values.every((value) => value !== null)),
+    ).toBe(true);
+  });
+
+  it("renders Cap GFS to Forecast Horizon as On/Off", () => {
+    const capped: WorkloadDataValues = {
+      ...DEFAULT_WORKLOAD_DATA_VALUES,
+      capGfsToForecastHorizon: false,
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "A",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "B",
+        workloadData: capped,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+    ];
+    const rows = getWorkloadDataComparisonRows(entries);
+    expect(
+      rows.find((row) => row.label === "Cap GFS to Forecast Horizon")?.values,
+    ).toEqual(["On", "Off"]);
   });
 });
