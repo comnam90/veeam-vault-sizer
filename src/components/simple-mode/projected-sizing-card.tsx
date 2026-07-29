@@ -1,6 +1,5 @@
 import { LoaderCircle, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCalculatedSizing } from "@/hooks/use-calculated-sizing";
 import { calculateInitialFullBandwidth } from "@/lib/simple-mode/calculate-initial-full-bandwidth";
 import {
   getTargetTierLabels,
@@ -11,6 +10,7 @@ import { SiteSizingSection } from "./site-sizing-section";
 import {
   REPO_TYPE_LABEL,
   type RepositoryConfigValues,
+  type SizerResult,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
@@ -18,6 +18,9 @@ import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 interface ProjectedSizingCardProps {
   workloadData: WorkloadDataValues;
   repositoryConfig: RepositoryConfigValues;
+  data: SizerResult | null;
+  isLoading: boolean;
+  error: string | null;
   onChange: (value: WorkloadDataValues) => void;
 }
 
@@ -44,12 +47,11 @@ function computeCopyModeTotals(copyData: {
 export function ProjectedSizingCard({
   workloadData,
   repositoryConfig,
+  data,
+  isLoading,
+  error,
   onChange,
 }: ProjectedSizingCardProps) {
-  const { data, isLoading, error } = useCalculatedSizing(
-    workloadData,
-    repositoryConfig,
-  );
   const initialFullRestore = calculateInitialFullBandwidth(
     workloadData.sourceSizeTB,
     workloadData.dataReductionPercent,

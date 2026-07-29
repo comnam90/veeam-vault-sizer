@@ -5,8 +5,8 @@ import { SimpleModePage } from "./simple-mode-page";
 
 describe("SimpleModePage", () => {
   beforeEach(() => {
-    // ProjectedSizingCard's useCalculatedSizing dispatches a real fetch on
-    // mount; stub it so these tests don't hit the network.
+    // SimpleModePage's useCalculatedSizing dispatches a real fetch on mount;
+    // stub it so these tests don't hit the network.
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
