@@ -42,6 +42,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -60,6 +61,7 @@ describe("ProjectedSizingCard", () => {
         data={null}
         isLoading={true}
         error={null}
+        canSnapshot={false}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -76,6 +78,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -93,6 +96,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -109,6 +113,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -135,6 +140,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error="Upstream sizing API unreachable"
+        canSnapshot={false}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -198,6 +204,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "copy", primary: primaryData, secondary: secondaryData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -268,6 +275,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "copy", primary: primaryData, secondary: secondaryData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -287,6 +295,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -308,6 +317,7 @@ describe("ProjectedSizingCard", () => {
         }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -330,6 +340,7 @@ describe("ProjectedSizingCard", () => {
         }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -348,6 +359,7 @@ describe("ProjectedSizingCard", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -373,6 +385,7 @@ describe("Snapshot current sizing button", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={onSnapshot}
       />,
@@ -392,6 +405,7 @@ describe("Snapshot current sizing button", () => {
         data={null}
         isLoading={true}
         error={null}
+        canSnapshot={false}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -410,6 +424,7 @@ describe("Snapshot current sizing button", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error="Upstream sizing API unreachable"
+        canSnapshot={false}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -428,6 +443,7 @@ describe("Snapshot current sizing button", () => {
         data={null}
         isLoading={false}
         error={null}
+        canSnapshot={false}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -446,6 +462,7 @@ describe("Snapshot current sizing button", () => {
         data={{ mode: "direct", data: mockData }}
         isLoading={false}
         error={null}
+        canSnapshot={true}
         onChange={() => {}}
         onSnapshot={() => {}}
       />,
@@ -454,5 +471,24 @@ describe("Snapshot current sizing button", () => {
     expect(
       screen.getByRole("button", { name: /snapshot current sizing/i }),
     ).toBeEnabled();
+  });
+
+  it("is disabled when canSnapshot is false, even with data present and no loading/error state (e.g. current form inputs are invalid)", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={false}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
   });
 });

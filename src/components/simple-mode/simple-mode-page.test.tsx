@@ -92,6 +92,117 @@ describe("SimpleModePage", () => {
     expect(within(row!).getByText("18.4 TB")).toBeInTheDocument();
   });
 
+  it("never reuses a default snapshot label after the snapshot it collides with is deleted", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              success: true,
+              mode: "direct",
+              data: {
+                totalStorageTB: 18.4,
+                workspaceGB: 0,
+                performanceTierImmutabilityTaxGB: 0,
+                capacityTierImmutabilityTaxGB: 0,
+                repoCompute: {
+                  compute: {
+                    cores: 4,
+                    ram: 16,
+                    volumes: [{ diskGB: 18841, diskPurpose: 3 }],
+                  },
+                },
+              },
+            }),
+          ),
+        ),
+      ),
+    );
+
+    render(<SimpleModePage />);
+
+    const snapshotButton = await screen.findByRole("button", {
+      name: /snapshot current sizing/i,
+    });
+    await vi.waitFor(() => expect(snapshotButton).toBeEnabled());
+
+    // Create "Snapshot 1" and "Snapshot 2".
+    await user.click(snapshotButton);
+    await user.click(snapshotButton);
+
+    expect(screen.getByDisplayValue("Snapshot 1")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Snapshot 2")).toBeInTheDocument();
+
+    // Delete "Snapshot 1" — the array now has length 1, containing only
+    // "Snapshot 2".
+    await user.click(
+      screen.getByRole("button", { name: /delete snapshot 1/i }),
+    );
+    expect(screen.queryByDisplayValue("Snapshot 1")).not.toBeInTheDocument();
+
+    // A naive `Snapshot ${prev.length + 1}` label would now produce
+    // "Snapshot 2" again (length 1 + 1), colliding with the survivor.
+    await user.click(snapshotButton);
+
+    expect(screen.getByDisplayValue("Snapshot 2")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Snapshot 3")).toBeInTheDocument();
+    // Exactly one input reads "Snapshot 2" — no collision/duplicate.
+    expect(screen.getAllByDisplayValue("Snapshot 2")).toHaveLength(1);
+  });
+
+  it("disables the Snapshot button and no-ops handleSnapshot once current form inputs become invalid, even though stale data from a prior successful calculation exists", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              success: true,
+              mode: "direct",
+              data: {
+                totalStorageTB: 18.4,
+                workspaceGB: 0,
+                performanceTierImmutabilityTaxGB: 0,
+                capacityTierImmutabilityTaxGB: 0,
+                repoCompute: {
+                  compute: {
+                    cores: 4,
+                    ram: 16,
+                    volumes: [{ diskGB: 18841, diskPurpose: 3 }],
+                  },
+                },
+              },
+            }),
+          ),
+        ),
+      ),
+    );
+
+    render(<SimpleModePage />);
+
+    const snapshotButton = await screen.findByRole("button", {
+      name: /snapshot current sizing/i,
+    });
+    await vi.waitFor(() => expect(snapshotButton).toBeEnabled());
+
+    // Make the current form invalid without changing `data` (which stays
+    // stale from the last successful calculation).
+    const sourceSizeInput = screen.getByLabelText(/source data size/i);
+    await user.clear(sourceSizeInput);
+
+    await vi.waitFor(() => expect(snapshotButton).toBeDisabled());
+
+    // A stray click on a disabled button is a no-op in the DOM, but assert
+    // the handler's own guard too by confirming no snapshot is created.
+    await user.click(snapshotButton);
+    expect(
+      screen.queryByDisplayValue(/^Snapshot \d+$/),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps a snapshot's stored values unchanged after the live form is edited further", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(

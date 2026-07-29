@@ -22,6 +22,11 @@ interface ProjectedSizingCardProps {
   data: SizerResult | null;
   isLoading: boolean;
   error: string | null;
+  // Whether the Snapshot button may be used right now — computed by the
+  // caller (which owns workloadData/repositoryConfig) from isLoading, error,
+  // data, and current form validity. Kept as a single incoming boolean
+  // rather than re-deriving loading/error/data/validation logic here.
+  canSnapshot: boolean;
   onChange: (value: WorkloadDataValues) => void;
   onSnapshot: () => void;
 }
@@ -52,6 +57,7 @@ export function ProjectedSizingCard({
   data,
   isLoading,
   error,
+  canSnapshot,
   onChange,
   onSnapshot,
 }: ProjectedSizingCardProps) {
@@ -163,11 +169,7 @@ export function ProjectedSizingCard({
           data-testid="projected-sizing-assumptions-placeholder"
           className="border-border h-16 rounded-lg border border-dashed"
         />
-        <Button
-          variant="outline"
-          onClick={onSnapshot}
-          disabled={isLoading || error !== null || data === null}
-        >
+        <Button variant="outline" onClick={onSnapshot} disabled={!canSnapshot}>
           Snapshot current sizing
         </Button>
       </CardContent>
