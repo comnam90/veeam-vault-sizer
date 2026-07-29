@@ -3,6 +3,7 @@ import { formatThroughputMbps } from "./format-throughput";
 import { getTierStorageRows, getTotalStorageGB } from "./storage-tiers";
 import {
   REPO_TYPE_LABEL,
+  repoTypeRequiresImmutability,
   type ArchiveTierConfig,
   type CapacityTierConfig,
   type RepositoryConfigValues,
@@ -229,11 +230,19 @@ function getPrimaryTargetConfigRows(entries: CompareEntry[]): ComparisonRow[] {
       label: "Primary — Immutable (Days)",
       values: entries.map((entry) => {
         const { repositoryConfig } = entry;
-        return repositoryConfig.backupPath === "copy"
-          ? repositoryConfig.primary.immutableDays
-          : repositoryConfig.targetRepository === "sobr"
+        if (repositoryConfig.backupPath === "copy") {
+          return repoTypeRequiresImmutability(repositoryConfig.primary.repoType)
+            ? repositoryConfig.primary.immutableDays
+            : null;
+        }
+        if (repositoryConfig.targetRepository === "sobr") {
+          return repoTypeRequiresImmutability(
+            repositoryConfig.sobr.performanceType,
+          )
             ? repositoryConfig.sobr.performanceImmutableDays
-            : repositoryConfig.targetRepositoryImmutableDays;
+            : null;
+        }
+        return repositoryConfig.targetRepositoryImmutableDays;
       }),
     },
     {
@@ -288,9 +297,14 @@ function getSecondaryConfigRows(entries: CompareEntry[]): ComparisonRow[] {
       values: entries.map((entry) => {
         const { repositoryConfig } = entry;
         if (repositoryConfig.backupPath !== "copy") return null;
-        return repositoryConfig.targetRepository === "sobr"
-          ? repositoryConfig.sobr.performanceImmutableDays
-          : repositoryConfig.targetRepositoryImmutableDays;
+        if (repositoryConfig.targetRepository === "sobr") {
+          return repoTypeRequiresImmutability(
+            repositoryConfig.sobr.performanceType,
+          )
+            ? repositoryConfig.sobr.performanceImmutableDays
+            : null;
+        }
+        return repositoryConfig.targetRepositoryImmutableDays;
       }),
     },
     {

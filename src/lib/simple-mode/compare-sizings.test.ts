@@ -567,4 +567,376 @@ describe("getRepositoryConfigComparisonRows", () => {
     expect(retentionRow?.values[0]).toBeNull();
     expect(retentionRow?.values[1]).toBe("45d + 1w / 2m / 0y");
   });
+
+  // Immutable (Days) gating: the live form (sobr-builder.tsx,
+  // backup-repository-card.tsx) only shows the immutable-days input for repo
+  // types where `repoTypeRequiresImmutability` is true. The compare row must
+  // render null (N/A) rather than a stored/default value for repo types
+  // where the user never saw or set that field. Note: the standalone
+  // `targetRepository` path ("vault-azure" | "vault-aws" | "sobr") can't hit
+  // the non-immutability case at all — both non-"sobr" values are Vault
+  // types, which always require immutability — so there's no test for it.
+
+  it("renders Primary — Immutable (Days) as null when sobr.performanceType doesn't require immutability (NAS), and the value when it does", () => {
+    const requiresImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "vault-azure",
+        performanceImmutableDays: "14",
+      },
+    };
+    const doesNotRequireImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "nas",
+        performanceImmutableDays: "14",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Requires immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: requiresImmutability,
+        data: null,
+      },
+      {
+        label: "Does not require immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: doesNotRequireImmutability,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const immutableRow = rows.find(
+      (row) => row.label === "Primary — Immutable (Days)",
+    );
+    expect(immutableRow?.values).toEqual(["14", null]);
+  });
+
+  it("renders Primary — Immutable (Days) as null when primary.repoType doesn't require immutability (ReFS/XFS) in copy mode, and the value when it does", () => {
+    const requiresImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      primary: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.primary,
+        repoType: "hardened-repository",
+        immutableDays: "21",
+      },
+    };
+    const doesNotRequireImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      primary: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.primary,
+        repoType: "refs-xfs",
+        immutableDays: "21",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Requires immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: requiresImmutability,
+        data: null,
+      },
+      {
+        label: "Does not require immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: doesNotRequireImmutability,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const immutableRow = rows.find(
+      (row) => row.label === "Primary — Immutable (Days)",
+    );
+    expect(immutableRow?.values).toEqual(["21", null]);
+  });
+
+  it("renders Secondary — Immutable (Days) as null when sobr.performanceType doesn't require immutability (Dedup Appliance) in copy mode, and the value when it does", () => {
+    const requiresImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "vault-aws",
+        performanceImmutableDays: "35",
+      },
+    };
+    const doesNotRequireImmutability: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "dedup-appliance",
+        performanceImmutableDays: "35",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Requires immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: requiresImmutability,
+        data: null,
+      },
+      {
+        label: "Does not require immutability",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: doesNotRequireImmutability,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const immutableRow = rows.find(
+      (row) => row.label === "Secondary — Immutable (Days)",
+    );
+    expect(immutableRow?.values).toEqual(["35", null]);
+  });
+
+  it("omits Primary — Archive Tier for entries where it isn't enabled, notes standalone fulls only when standaloneFullBackups is true, for entries where it is enabled", () => {
+    const standaloneOn: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        archiveTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+          enabled: true,
+          moveDays: "120",
+          immutableDays: "400",
+          standaloneFullBackups: true,
+        },
+      },
+    };
+    const standaloneOff: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        archiveTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+          enabled: true,
+          moveDays: "120",
+          immutableDays: "400",
+          standaloneFullBackups: false,
+        },
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Disabled",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Standalone on",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: standaloneOn,
+        data: null,
+      },
+      {
+        label: "Standalone off",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: standaloneOff,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const archiveRow = rows.find(
+      (row) => row.label === "Primary — Archive Tier",
+    );
+    expect(archiveRow?.values[0]).toBeNull();
+    expect(archiveRow?.values[1]).toContain("standalone fulls");
+    expect(archiveRow?.values[1]).toContain("120");
+    expect(archiveRow?.values[1]).toContain("400");
+    expect(archiveRow?.values[2]).not.toContain("standalone fulls");
+  });
+
+  it("omits Primary — Archive Tier row entirely when no entry has it enabled", () => {
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct A",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: DEFAULT_REPOSITORY_CONFIG_VALUES,
+        data: null,
+      },
+      {
+        label: "Direct B",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          targetRepository: "vault-aws",
+        },
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(rows.some((row) => row.label === "Primary — Archive Tier")).toBe(
+      false,
+    );
+  });
+
+  it("omits Secondary — Archive Tier for entries where it isn't enabled, notes standalone fulls only when standaloneFullBackups is true, for entries where it is enabled", () => {
+    const standaloneOn: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        archiveTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+          enabled: true,
+          moveDays: "150",
+          immutableDays: "500",
+          standaloneFullBackups: true,
+        },
+      },
+    };
+    const standaloneOff: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        archiveTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.archiveTier,
+          enabled: true,
+          moveDays: "150",
+          immutableDays: "500",
+          standaloneFullBackups: false,
+        },
+      },
+    };
+    const disabled: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Disabled",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: disabled,
+        data: null,
+      },
+      {
+        label: "Standalone on",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: standaloneOn,
+        data: null,
+      },
+      {
+        label: "Standalone off",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: standaloneOff,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const archiveRow = rows.find(
+      (row) => row.label === "Secondary — Archive Tier",
+    );
+    expect(archiveRow?.values[0]).toBeNull();
+    expect(archiveRow?.values[1]).toContain("standalone fulls");
+    expect(archiveRow?.values[1]).toContain("150");
+    expect(archiveRow?.values[1]).toContain("500");
+    expect(archiveRow?.values[2]).not.toContain("standalone fulls");
+  });
+
+  it("omits Secondary — Archive Tier row entirely when no entry has it enabled", () => {
+    const entries: CompareEntry[] = [
+      {
+        label: "Copy A",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+        },
+        data: null,
+      },
+      {
+        label: "Copy B",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+          backupPath: "copy",
+          targetRepository: "sobr",
+        },
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(rows.some((row) => row.label === "Secondary — Archive Tier")).toBe(
+      false,
+    );
+  });
+
+  it("shows Secondary — Capacity Tier's formatted value (repo type label, policy, move/immutable days) in a copy-mode SOBR scenario", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        capacityTier: {
+          ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr.capacityTier,
+          enabled: true,
+          type: "azure-blob",
+          copyPolicy: true,
+          movePolicy: true,
+          moveDays: "60",
+          immutableDays: "40",
+        },
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Copy",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const capacityRow = rows.find(
+      (row) => row.label === "Secondary — Capacity Tier",
+    );
+    expect(capacityRow?.values[0]).toBe(
+      "Azure Blob, Copy + Move, move at 60d, immutable 40d",
+    );
+  });
+
+  it("shows Secondary — Retention Override's exact formatted string in a copy-mode scenario", () => {
+    const copyConfig: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      secondaryRetention: {
+        customizeRetention: true,
+        retentionDays: "60",
+        gfsWeekly: "2",
+        gfsMonthly: "6",
+        gfsYearly: "1",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Copy",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: copyConfig,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    const retentionRow = rows.find(
+      (row) => row.label === "Secondary — Retention Override",
+    );
+    expect(retentionRow?.values[0]).toBe("60d + 2w / 6m / 1y");
+  });
 });
