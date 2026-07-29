@@ -39,6 +39,7 @@ export function SimpleModePage() {
           isLoading={isLoading}
           error={error}
           onChange={setWorkloadData}
+          onSnapshot={() => {}}
         />
       </div>
     </div>

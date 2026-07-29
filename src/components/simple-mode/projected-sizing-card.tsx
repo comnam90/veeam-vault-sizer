@@ -1,4 +1,5 @@
 import { LoaderCircle, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculateInitialFullBandwidth } from "@/lib/simple-mode/calculate-initial-full-bandwidth";
 import {
@@ -22,6 +23,7 @@ interface ProjectedSizingCardProps {
   isLoading: boolean;
   error: string | null;
   onChange: (value: WorkloadDataValues) => void;
+  onSnapshot: () => void;
 }
 
 // Rounded once here so the headline and subline always sum consistently
@@ -51,6 +53,7 @@ export function ProjectedSizingCard({
   isLoading,
   error,
   onChange,
+  onSnapshot,
 }: ProjectedSizingCardProps) {
   const initialFullRestore = calculateInitialFullBandwidth(
     workloadData.sourceSizeTB,
@@ -160,10 +163,13 @@ export function ProjectedSizingCard({
           data-testid="projected-sizing-assumptions-placeholder"
           className="border-border h-16 rounded-lg border border-dashed"
         />
-        <div
-          data-testid="projected-sizing-actions-placeholder"
-          className="border-border h-20 rounded-lg border border-dashed"
-        />
+        <Button
+          variant="outline"
+          onClick={onSnapshot}
+          disabled={isLoading || error !== null || data === null}
+        >
+          Snapshot current sizing
+        </Button>
       </CardContent>
     </Card>
   );

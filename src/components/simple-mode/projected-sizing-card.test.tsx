@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ProjectedSizingCard } from "./projected-sizing-card";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
@@ -42,6 +43,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -59,6 +61,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={true}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -74,6 +77,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -90,6 +94,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -105,6 +110,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -130,6 +136,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error="Upstream sizing API unreachable"
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -192,6 +199,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -261,6 +269,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -279,6 +288,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -299,6 +309,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -320,6 +331,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -337,6 +349,7 @@ describe("ProjectedSizingCard", () => {
         isLoading={false}
         error={null}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
@@ -345,5 +358,101 @@ describe("ProjectedSizingCard", () => {
     expect(
       screen.queryByText(/couldn't be fully verified/i),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("Snapshot current sizing button", () => {
+  it("calls onSnapshot when clicked", async () => {
+    const user = userEvent.setup();
+    const onSnapshot = vi.fn();
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        onChange={() => {}}
+        onSnapshot={onSnapshot}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    );
+    expect(onSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("is disabled while isLoading is true", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={null}
+        isLoading={true}
+        error={null}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is disabled when error is set", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error="Upstream sizing API unreachable"
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is disabled when data is null (no successful calculation yet)", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={null}
+        isLoading={false}
+        error={null}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is enabled once data is present and there is no loading/error state", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeEnabled();
   });
 });
