@@ -37,7 +37,7 @@ Freezing the computed result, rather than only the inputs, matters for two reaso
 
 ### Creating a snapshot
 
-A "Snapshot current sizing" button fills the `actions` placeholder already scaffolded in `ProjectedSizingCard` (`projected-sizing-card.tsx:161-164`). Clicking it appends a new `Snapshot` to the list, auto-labeled `Snapshot N`. The button is disabled whenever `isLoading` is true, `error` is set, or `data` is `null` — a snapshot can't be taken of a stale, failed, or not-yet-computed calculation (the third case covers first load, and any moment validation errors keep the hook from ever dispatching).
+A "Snapshot current sizing" button fills the `actions` placeholder already scaffolded in `ProjectedSizingCard` (`projected-sizing-card.tsx:161-164`). Clicking it appends a new `Snapshot` to the list, auto-labeled `Snapshot N`. The button is disabled whenever `isLoading` is true, `error` is set, `data` is `null`, or the live form inputs currently fail validation — a snapshot can't be taken of a stale, failed, not-yet-computed, or currently-invalid calculation. That fourth condition is checked independently by `SimpleModePage` (re-running `validateWorkloadData`/`validateRepositoryConfig`), because `useCalculatedSizing` leaves its last-good `data` in place rather than clearing it when validation fails — so `data !== null` alone can't be trusted to mean "current inputs are valid" (see GitHub issue #14 for the proposal to fix this at the hook level).
 
 ### Browsing snapshots
 
