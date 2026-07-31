@@ -31,3 +31,25 @@ _Avoid_: "total storage" on its own (ambiguous — could mean the API's Performa
 **Vault Minimum Retention**:
 The fixed 30-day floor Veeam Data Cloud Vault requires data to remain on any Vault-typed location before removal or move-out — a retention/residency rule, independent of a tier's own configurable "Immutable for (Days)" setting (ADR-0013).
 _Avoid_: "immutability floor", "immutability minimum" (conflates with the separate, already-existing `immutableDays` field)
+
+### Advanced Mode Data Model
+
+**Workload Data**:
+The data profile a Job sizes from — source size, daily change rate, data reduction, yearly growth, and its own retention/GFS points (`WorkloadDataValues`). Describes only the data being protected; a Job is Workload Data plus where it lands.
+_Avoid_: "workload" alone as if it already includes target/repo wiring
+
+**Job**:
+One real VBR backup job — a Workload Data profile plus a reference to the single Repo it backs up to and, optionally, a reference to a BackupCopyJob (ADR-0023). The "job-to-repository mapping" the project brief describes is this reference itself, not a separate join entity.
+_Avoid_: "primary target" for the Job's own Repo (ADR-0007's "Primary" is Simple Mode's Copy-mode-specific label for this same Repo — the general model needs no adjective, since a Job has exactly one); "mapping" as if it names a distinct object
+
+**Repo**:
+A target repository definition (standalone, or SOBR with Performance/Capacity/Archive tiers) that Jobs and BackupCopyJobs reference by ID (ADR-0023). Distinct from `RepoType`, the storage backend/media type — Vault Azure, Hardened Repository, etc. — which is one ingredient in a Repo's tiers, not the whole configured target.
+_Avoid_: "repository" alone when `RepoType` specifically is meant
+
+**BackupCopyJob**:
+A secondary backup-copy target — a Repo reference plus its own retention/GFS policy, referenced by ID so multiple Jobs can share one and have their data sized together under a single capacity/retention policy (ADR-0023). Generalizes ADR-0007's per-job "Secondary" into a shareable entity; mirrors how VBR itself manages backup copy jobs as their own objects, separate from the source jobs that feed them.
+_Avoid_: "secondary target", "copy target" alone (both obscure that it's a shareable, independently-identified entity, not a per-job flag)
+
+**Length-1 Projection**:
+Simple Mode's data is exactly one Job, one Repo, and (if Backup Copy is enabled) one BackupCopyJob — the same three entities Advanced Mode uses, just held to a count of one each (ADR-0023). Promoting a sizing to Advanced Mode means lifting that count constraint, not converting between two different formats.
+_Avoid_: "simple format", "simplified schema" (both imply Simple Mode uses a lesser/different shape rather than the same model at length one)
