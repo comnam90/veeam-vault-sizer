@@ -343,6 +343,86 @@ describe("getRepositoryConfigComparisonRows", () => {
     ).toEqual(["Vault Azure", "Hardened Repository"]);
   });
 
+  it("distinguishes a SOBR target from a direct target of the same underlying repo type", () => {
+    // A direct "vault-azure" target and a SOBR whose Performance tier type is
+    // also "vault-azure" must not render identically — one is a Scale-Out
+    // Backup Repository, the other isn't, and that's architecturally
+    // significant information the compare table must preserve (design spec:
+    // "SOBR-only fields (Performance type, Capacity Tier settings, Archive
+    // Tier settings) shown only for columns whose target is a SOBR").
+    const direct: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "vault-azure",
+    };
+    const sobrSamePerformanceType: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "vault-azure",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: direct,
+        data: null,
+      },
+      {
+        label: "SOBR",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: sobrSamePerformanceType,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(
+      rows.find((row) => row.label === "Primary — Repository Type")?.values,
+    ).toEqual(["Vault Azure", "Scale-Out Backup Repository (SOBR)"]);
+    expect(
+      rows.find((row) => row.label === "Primary — Performance Type")?.values,
+    ).toEqual([null, "Vault Azure"]);
+  });
+
+  it("shows Secondary — Performance Type only when the Secondary target is a SOBR", () => {
+    const direct: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "vault-aws",
+    };
+    const sobr: RepositoryConfigValues = {
+      ...DEFAULT_REPOSITORY_CONFIG_VALUES,
+      backupPath: "copy",
+      targetRepository: "sobr",
+      sobr: {
+        ...DEFAULT_REPOSITORY_CONFIG_VALUES.sobr,
+        performanceType: "s3-compatible",
+      },
+    };
+    const entries: CompareEntry[] = [
+      {
+        label: "Direct",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: direct,
+        data: null,
+      },
+      {
+        label: "SOBR",
+        workloadData: DEFAULT_WORKLOAD_DATA_VALUES,
+        repositoryConfig: sobr,
+        data: null,
+      },
+    ];
+    const rows = getRepositoryConfigComparisonRows(entries);
+    expect(
+      rows.find((row) => row.label === "Secondary — Repository Type")?.values,
+    ).toEqual(["Vault AWS", "Scale-Out Backup Repository (SOBR)"]);
+    expect(
+      rows.find((row) => row.label === "Secondary — Performance Type")?.values,
+    ).toEqual([null, "S3 Compatible"]);
+  });
+
   it("omits Primary — Capacity Tier for entries where it isn't enabled, and shows it for entries where it is", () => {
     const withCapacity: RepositoryConfigValues = {
       ...DEFAULT_REPOSITORY_CONFIG_VALUES,

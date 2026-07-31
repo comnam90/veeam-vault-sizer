@@ -41,6 +41,11 @@ function formatTB(gb: number): string {
   return `${(gb / 1024).toFixed(1)} TB`;
 }
 
+// A SOBR column and a direct target sharing the same underlying repo type
+// must not render identically in the compare table — the Performance Type
+// row below carries the leaf type; this row only says "this is a SOBR."
+const SOBR_TARGET_LABEL = "Scale-Out Backup Repository (SOBR)";
+
 export function getTotalRequiredStorageTB(
   data: SizerResult | null,
 ): number | null {
@@ -217,13 +222,21 @@ function getPrimaryTargetConfigRows(entries: CompareEntry[]): ComparisonRow[] {
       label: "Primary — Repository Type",
       values: entries.map((entry) => {
         const { repositoryConfig } = entry;
-        const repoType =
-          repositoryConfig.backupPath === "copy"
-            ? repositoryConfig.primary.repoType
-            : repositoryConfig.targetRepository === "sobr"
-              ? repositoryConfig.sobr.performanceType
-              : repositoryConfig.targetRepository;
-        return REPO_TYPE_LABEL[repoType];
+        if (repositoryConfig.backupPath === "copy") {
+          return REPO_TYPE_LABEL[repositoryConfig.primary.repoType];
+        }
+        return repositoryConfig.targetRepository === "sobr"
+          ? SOBR_TARGET_LABEL
+          : REPO_TYPE_LABEL[repositoryConfig.targetRepository];
+      }),
+    },
+    {
+      label: "Primary — Performance Type",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath === "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        return REPO_TYPE_LABEL[repositoryConfig.sobr.performanceType];
       }),
     },
     {
@@ -285,11 +298,18 @@ function getSecondaryConfigRows(entries: CompareEntry[]): ComparisonRow[] {
       values: entries.map((entry) => {
         const { repositoryConfig } = entry;
         if (repositoryConfig.backupPath !== "copy") return null;
-        return REPO_TYPE_LABEL[
-          repositoryConfig.targetRepository === "sobr"
-            ? repositoryConfig.sobr.performanceType
-            : repositoryConfig.targetRepository
-        ];
+        return repositoryConfig.targetRepository === "sobr"
+          ? SOBR_TARGET_LABEL
+          : REPO_TYPE_LABEL[repositoryConfig.targetRepository];
+      }),
+    },
+    {
+      label: "Secondary — Performance Type",
+      values: entries.map((entry) => {
+        const { repositoryConfig } = entry;
+        if (repositoryConfig.backupPath !== "copy") return null;
+        if (repositoryConfig.targetRepository !== "sobr") return null;
+        return REPO_TYPE_LABEL[repositoryConfig.sobr.performanceType];
       }),
     },
     {
