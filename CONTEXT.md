@@ -24,6 +24,14 @@ _Avoid_: "growth horizon", "projection window" (both leave ambiguous whether sto
 Capacity a still-immutability-locked restore point occupies in its original tier _in addition to_ wherever it's been moved, because the lock prevents reclaiming that space until it expires. Reported per-tier via `performanceTierImmutabilityTaxGB`/`capacityTierImmutabilityTaxGB` on the calculator API response; the official calculator UI labels the same figure "Immutability overhead." Distinct from Block Generation (a batching _window_, not an occupied-capacity figure) and Vault Minimum Retention (a residency _floor_, not a transitional double-occupancy cost).
 _Avoid_: "immutability overhead" (the UI's label — keep code/docs consistent with the API field name instead), "duplicate-window" (an earlier, since-resolved working name for the same phenomenon, from before the field was found)
 
+**Live**:
+The current, uncommitted sizing on the page — the one still being edited, as opposed to any Snapshot. Always the baseline first column in a comparison, labeled "Live."
+_Avoid_: "current sizing" alone (ambiguous — a Snapshot's frozen values were also "current" at the moment it was taken)
+
+**Snapshot**:
+A frozen, point-in-time copy of a sizing calculation — its Workload Data, Repository Configuration, and calculated result — held in memory so it can be compared against the Live sizing or another Snapshot. Session-only: never persisted, cleared on reload. "Snapshot" is the canonical term in code and docs; the UI deliberately labels the concept "Saved Sizing"/"Snapshot current sizing" for users, which is intentional user-facing copy, not a competing concept.
+_Avoid_: "Saved Sizing" outside UI copy (keep code/docs consistent with "Snapshot")
+
 **Total Required Storage**:
 The sum of every configured tier's sized capacity (Performance + Capacity + Archive) — the headline figure the Projected Sizing canvas shows. Distinct from the calculator API's `totalStorageTB` response value, which reports Performance Tier alone despite the name.
 _Avoid_: "total storage" on its own (ambiguous — could mean the API's Performance-tier-only field instead)
