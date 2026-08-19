@@ -11,6 +11,7 @@ Before writing any code, read these files in full — they are the spec this pro
 - `veeam_vault_sizer_project_brief.md` — functional requirements
 - `DESIGN-v3.md` (light) / `DESIGN-v3-dark.md` (dark) — design system, superseding `DESIGN-v2.md`/`DESIGN-v2-dark.md` and `DESIGN.md`/`DESIGN-dark.md` (YAML frontmatter has machine-readable tokens: colors, typography, spacing, radii; prose below it explains usage). These track the token files ("Enterprise Precision" / "Obsidian Precision") that Veeam's Stitch design tool actually generates mockups from — treat Stitch as the source of truth for color tokens over any other palette reference.
 - `screen.png` — reference mockup of the Simple Mode UI
+- `ROADMAP.md` — feature sequencing (MVP / beta / post-beta); architecture decisions it depends on live in `docs/adr/`, not here
 
 ## What this project is
 

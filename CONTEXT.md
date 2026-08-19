@@ -24,6 +24,14 @@ _Avoid_: "growth horizon", "projection window" (both leave ambiguous whether sto
 Capacity a still-immutability-locked restore point occupies in its original tier _in addition to_ wherever it's been moved, because the lock prevents reclaiming that space until it expires. Reported per-tier via `performanceTierImmutabilityTaxGB`/`capacityTierImmutabilityTaxGB` on the calculator API response; the official calculator UI labels the same figure "Immutability overhead." Distinct from Block Generation (a batching _window_, not an occupied-capacity figure) and Vault Minimum Retention (a residency _floor_, not a transitional double-occupancy cost).
 _Avoid_: "immutability overhead" (the UI's label — keep code/docs consistent with the API field name instead), "duplicate-window" (an earlier, since-resolved working name for the same phenomenon, from before the field was found)
 
+**Live**:
+The current, uncommitted sizing on the page — the one still being edited, as opposed to any Snapshot. Always the baseline first column in a comparison, labeled "Live."
+_Avoid_: "current sizing" alone (ambiguous — a Snapshot's frozen values were also "current" at the moment it was taken)
+
+**Snapshot**:
+A frozen, point-in-time copy of a sizing calculation — its Workload Data, Repository Configuration, and calculated result — held in memory so it can be compared against the Live sizing or another Snapshot. Session-only: never persisted, cleared on reload. "Snapshot" is the canonical term in code and docs; the UI deliberately labels the concept "Saved Sizing"/"Snapshot current sizing" for users, which is intentional user-facing copy, not a competing concept.
+_Avoid_: "Saved Sizing" outside UI copy (keep code/docs consistent with "Snapshot")
+
 **Total Required Storage**:
 The sum of every configured tier's sized capacity (Performance + Capacity + Archive) — the headline figure the Projected Sizing canvas shows. Distinct from the calculator API's `totalStorageTB` response value, which reports Performance Tier alone despite the name.
 _Avoid_: "total storage" on its own (ambiguous — could mean the API's Performance-tier-only field instead)
@@ -31,3 +39,25 @@ _Avoid_: "total storage" on its own (ambiguous — could mean the API's Performa
 **Vault Minimum Retention**:
 The fixed 30-day floor Veeam Data Cloud Vault requires data to remain on any Vault-typed location before removal or move-out — a retention/residency rule, independent of a tier's own configurable "Immutable for (Days)" setting (ADR-0013).
 _Avoid_: "immutability floor", "immutability minimum" (conflates with the separate, already-existing `immutableDays` field)
+
+### Advanced Mode Data Model
+
+**Workload Data**:
+The data profile a Job sizes from — source size, daily change rate, data reduction, yearly growth, and its own retention/GFS points (`WorkloadDataValues`). Describes only the data being protected; a Job is Workload Data plus where it lands.
+_Avoid_: "workload" alone as if it already includes target/repo wiring
+
+**Job**:
+One real VBR backup job — a Workload Data profile plus a reference to the single Repo it backs up to and, optionally, a reference to a BackupCopyJob (ADR-0023). The "job-to-repository mapping" the project brief describes is this reference itself, not a separate join entity.
+_Avoid_: "primary target" for the Job's own Repo (ADR-0007's "Primary" is Simple Mode's Copy-mode-specific label for this same Repo — the general model needs no adjective, since a Job has exactly one); "mapping" as if it names a distinct object
+
+**Repo**:
+A target repository definition (standalone, or SOBR with Performance/Capacity/Archive tiers) that Jobs and BackupCopyJobs reference by ID (ADR-0023). Distinct from `RepoType`, the storage backend/media type — Vault Azure, Hardened Repository, etc. — which is one ingredient in a Repo's tiers, not the whole configured target.
+_Avoid_: "repository" alone when `RepoType` specifically is meant
+
+**BackupCopyJob**:
+A secondary backup-copy target — a Repo reference plus its own retention/GFS policy, referenced by ID so multiple Jobs can share one and have their data sized together under a single capacity/retention policy (ADR-0023). Generalizes ADR-0007's per-job "Secondary" into a shareable entity; mirrors how VBR itself manages backup copy jobs as their own objects, separate from the source jobs that feed them.
+_Avoid_: "secondary target", "copy target" alone (both obscure that it's a shareable, independently-identified entity, not a per-job flag)
+
+**Length-1 Projection**:
+Simple Mode's data is exactly one Job, one Repo, and (if Backup Copy is enabled) one BackupCopyJob — the same three entities Advanced Mode uses, just held to a count of one each (ADR-0023). Promoting a sizing to Advanced Mode means lifting that count constraint, not converting between two different formats.
+_Avoid_: "simple format", "simplified schema" (both imply Simple Mode uses a lesser/different shape rather than the same model at length one)

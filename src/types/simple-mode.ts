@@ -322,3 +322,11 @@ export type SizerResult =
       secondary: CVmAgentReturnObject;
       archiveTierNotice?: ArchiveTierNotice;
     };
+
+export interface Snapshot {
+  id: string;
+  label: string;
+  workloadData: WorkloadDataValues;
+  repositoryConfig: RepositoryConfigValues;
+  data: SizerResult;
+}

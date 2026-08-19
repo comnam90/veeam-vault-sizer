@@ -1,6 +1,6 @@
 import { LoaderCircle, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCalculatedSizing } from "@/hooks/use-calculated-sizing";
 import { calculateInitialFullBandwidth } from "@/lib/simple-mode/calculate-initial-full-bandwidth";
 import {
   getTargetTierLabels,
@@ -11,6 +11,7 @@ import { SiteSizingSection } from "./site-sizing-section";
 import {
   REPO_TYPE_LABEL,
   type RepositoryConfigValues,
+  type SizerResult,
   type WorkloadDataValues,
 } from "@/types/simple-mode";
 import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
@@ -18,7 +19,16 @@ import type { CVmAgentReturnObject } from "@/types/vault-sizer-api";
 interface ProjectedSizingCardProps {
   workloadData: WorkloadDataValues;
   repositoryConfig: RepositoryConfigValues;
+  data: SizerResult | null;
+  isLoading: boolean;
+  error: string | null;
+  // Whether the Snapshot button may be used right now — computed by the
+  // caller (which owns workloadData/repositoryConfig) from isLoading, error,
+  // data, and current form validity. Kept as a single incoming boolean
+  // rather than re-deriving loading/error/data/validation logic here.
+  canSnapshot: boolean;
   onChange: (value: WorkloadDataValues) => void;
+  onSnapshot: () => void;
 }
 
 // Rounded once here so the headline and subline always sum consistently
@@ -44,12 +54,13 @@ function computeCopyModeTotals(copyData: {
 export function ProjectedSizingCard({
   workloadData,
   repositoryConfig,
+  data,
+  isLoading,
+  error,
+  canSnapshot,
   onChange,
+  onSnapshot,
 }: ProjectedSizingCardProps) {
-  const { data, isLoading, error } = useCalculatedSizing(
-    workloadData,
-    repositoryConfig,
-  );
   const initialFullRestore = calculateInitialFullBandwidth(
     workloadData.sourceSizeTB,
     workloadData.dataReductionPercent,
@@ -158,10 +169,9 @@ export function ProjectedSizingCard({
           data-testid="projected-sizing-assumptions-placeholder"
           className="border-border h-16 rounded-lg border border-dashed"
         />
-        <div
-          data-testid="projected-sizing-actions-placeholder"
-          className="border-border h-20 rounded-lg border border-dashed"
-        />
+        <Button variant="outline" onClick={onSnapshot} disabled={!canSnapshot}>
+          Snapshot current sizing
+        </Button>
       </CardContent>
     </Card>
   );

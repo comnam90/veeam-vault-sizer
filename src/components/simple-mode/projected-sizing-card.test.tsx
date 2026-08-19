@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ProjectedSizingCard } from "./projected-sizing-card";
 import {
   DEFAULT_REPOSITORY_CONFIG_VALUES,
@@ -32,117 +33,98 @@ const mockData: CVmAgentReturnObject = {
   },
 };
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status });
-}
-
 describe("ProjectedSizingCard", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.stubGlobal("fetch", vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
-  });
-
-  it("renders both ghost placeholders", () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
+  it("renders the assumptions placeholder and the Snapshot current sizing action", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
     expect(
       screen.getByTestId("projected-sizing-assumptions-placeholder"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByTestId("projected-sizing-actions-placeholder"),
-    ).toBeInTheDocument();
   });
 
-  it("shows a loading indicator while the initial request is in flight", () => {
-    vi.mocked(fetch).mockImplementation(() => new Promise(() => {}));
-
+  it("shows a loading indicator while isLoading is true", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={null}
+        isLoading={true}
+        error={null}
+        canSnapshot={false}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
     expect(screen.getByLabelText("Recalculating")).toBeInTheDocument();
   });
 
-  it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
+  it("wires InfrastructureTelemetry to proxyCompute, not repoCompute", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    // proxyCompute's cores (8)/ram (32 GB), not repoCompute's (4/16).
-    await vi.waitFor(() => expect(screen.getByText("8")).toBeInTheDocument());
+    expect(screen.getByText("8")).toBeInTheDocument();
     expect(screen.getByText("32 GB")).toBeInTheDocument();
   });
 
-  it("labels the compute/network section as Proxy Compute, distinct from repo storage sizing above it", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
+  it("labels the compute/network section as Proxy Compute, distinct from repo storage sizing above it", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(screen.getByText("Proxy Compute")).toBeInTheDocument(),
-    );
+    expect(screen.getByText("Proxy Compute")).toBeInTheDocument();
   });
 
-  it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
+  it("wires NetworkBandwidth to proxyCompute's networkThroughput and the derived initial full/restore figure", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    // proxyCompute.compute.networkThroughput from mockData, scoped to the
-    // Nightly Incremental row so a nightly/initial-full swap would fail.
-    await vi.waitFor(() => {
-      const nightlyRow = screen
-        .getByText("Nightly Incremental (8h)")
-        .closest("tr");
-      expect(nightlyRow).not.toBeNull();
-      expect(within(nightlyRow!).getByText("400.0 Mbps")).toBeInTheDocument();
-    });
-    // Derived from DEFAULT_WORKLOAD_DATA_VALUES: sourceSizeTB "10",
-    // dataReductionPercent "50" — computed instantly, no fetch involved.
-    // Scoped to the Initial Full / Restore row for the same reason.
+    const nightlyRow = screen
+      .getByText("Nightly Incremental (8h)")
+      .closest("tr");
+    expect(nightlyRow).not.toBeNull();
+    expect(within(nightlyRow!).getByText("400.0 Mbps")).toBeInTheDocument();
+
     const initialFullRow = screen
       .getByText("Initial Full / Restore (24h)")
       .closest("tr");
@@ -150,53 +132,27 @@ describe("ProjectedSizingCard", () => {
     expect(within(initialFullRow!).getByText("485.5 Mbps")).toBeInTheDocument();
   });
 
-  it("shows the error banner and keeps last-good data visible beneath it", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        jsonResponse({ success: true, mode: "direct", data: mockData }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse(
-          { success: false, error: "Upstream sizing API unreachable" },
-          502,
-        ),
-      );
-
-    const { rerender } = render(
+  it("shows the error banner and keeps last-good data visible beneath it", () => {
+    render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error="Upstream sizing API unreachable"
+        canSnapshot={false}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0),
-    );
-
-    const edited = { ...DEFAULT_WORKLOAD_DATA_VALUES, sourceSizeTB: "11" };
-    act(() => {
-      rerender(
-        <ProjectedSizingCard
-          workloadData={edited}
-          repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
-          onChange={() => {}}
-        />,
-      );
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(500);
-    });
-
-    await vi.waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        "Upstream sizing API unreachable",
-      ),
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Upstream sizing API unreachable",
     );
     expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0);
   });
 
-  it("renders the split canvas with a combined total and both site sections in copy mode", async () => {
+  it("renders the split canvas with a combined total and both site sections in copy mode", () => {
     const primaryData: CVmAgentReturnObject = {
       totalStorageTB: 0,
       workspaceGB: 0,
@@ -238,15 +194,6 @@ describe("ProjectedSizingCard", () => {
       },
     };
 
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({
-        success: true,
-        mode: "copy",
-        primary: primaryData,
-        secondary: secondaryData,
-      }),
-    );
-
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
@@ -254,37 +201,29 @@ describe("ProjectedSizingCard", () => {
           ...DEFAULT_REPOSITORY_CONFIG_VALUES,
           backupPath: "copy",
         }}
+        data={{ mode: "copy", primary: primaryData, secondary: secondaryData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(screen.getByText("Combined Required Storage")).toBeInTheDocument(),
-    );
-    // 24576 GB + 18841 GB = 43417 GB => 42.4 TB combined.
+    expect(screen.getByText("Combined Required Storage")).toBeInTheDocument();
     expect(screen.getByText("42.4 TB")).toBeInTheDocument();
     expect(screen.getByText("Primary Repository")).toBeInTheDocument();
     expect(screen.getByText("Secondary Repository")).toBeInTheDocument();
-    // Default copy config: primary hardened-repository, secondary vault-azure,
-    // both on the Performance tier (the only tier either side has enabled).
     expect(
       screen.getByText("Performance — Hardened Repository"),
     ).toBeInTheDocument();
     expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument();
-    // Subline: primary 24576 GB / 1024 = 24.0 TB; secondary is the residual
-    // from the rounded combined/primary figures, not its own rounding.
     expect(
       screen.getByText("Primary 24.0 TB + Secondary 18.4 TB"),
     ).toBeInTheDocument();
   });
 
-  it("derives the copy-mode subline's secondary figure as a residual of the rounded headline (D14), not its own independent rounding", async () => {
-    // Chosen so independent rounding and the residual disagree: primary
-    // 3113 GB / 1024 = 3.0400... TB -> "3.0"; secondary 2089 GB / 1024 =
-    // 2.0400... TB -> "2.0" on its own. But combined (3113+2089) / 1024 =
-    // 5.0800... TB -> "5.1", so the residual (5.1 - 3.0) is "2.1", not "2.0".
-    // A regression to independently rounding the secondary total would
-    // render "Secondary 2.0 TB" here instead and fail this assertion.
+  it("derives the copy-mode subline's secondary figure as a residual of the rounded headline (D14), not its own independent rounding", () => {
     const primaryData: CVmAgentReturnObject = {
       totalStorageTB: 0,
       workspaceGB: 0,
@@ -326,15 +265,6 @@ describe("ProjectedSizingCard", () => {
       },
     };
 
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({
-        success: true,
-        mode: "copy",
-        primary: primaryData,
-        secondary: secondaryData,
-      }),
-    );
-
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
@@ -342,115 +272,223 @@ describe("ProjectedSizingCard", () => {
           ...DEFAULT_REPOSITORY_CONFIG_VALUES,
           backupPath: "copy",
         }}
+        data={{ mode: "copy", primary: primaryData, secondary: secondaryData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(screen.getByText("5.1 TB")).toBeInTheDocument(),
-    );
+    expect(screen.getByText("5.1 TB")).toBeInTheDocument();
     expect(
       screen.getByText("Primary 3.0 TB + Secondary 2.1 TB"),
     ).toBeInTheDocument();
   });
 
-  it("titles the direct-mode section Primary Repository with its target's tier label", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
+  it("titles the direct-mode section Primary Repository with its target's tier label", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    // Wait on the data-dependent tier label rather than the static title:
-    // "Primary Repository" is present from the very first (pre-fetch) render
-    // since it doesn't depend on data, so waiting on it resolves immediately
-    // without giving the in-flight fetch's microtask a chance to flush,
-    // racing the assertion below. "Performance — Vault Azure" only appears
-    // once data has loaded, so waiting on it guarantees the loaded render.
-    await vi.waitFor(() =>
-      expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument(),
-    );
-    // DEFAULT_REPOSITORY_CONFIG_VALUES.targetRepository is "vault-azure".
+    expect(screen.getByText("Performance — Vault Azure")).toBeInTheDocument();
     expect(screen.getByText("Primary Repository")).toBeInTheDocument();
   });
 
-  it("renders the adjusted-threshold note when archiveTierNotice.status is adjusted", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({
-        success: true,
-        mode: "direct",
-        data: mockData,
-        archiveTierNotice: { status: "adjusted", effectiveThresholdDays: 30 },
-      }),
-    );
-
+  it("renders the adjusted-threshold note when archiveTierNotice.status is adjusted", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{
+          mode: "direct",
+          data: mockData,
+          archiveTierNotice: { status: "adjusted", effectiveThresholdDays: 30 },
+        }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(
-        screen.getByText(/adjusted internally to 30 days/i),
-      ).toBeInTheDocument(),
+    expect(
+      screen.getByText(/adjusted internally to 30 days/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the hard disclaimer when archiveTierNotice.status is failed", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{
+          mode: "direct",
+          data: mockData,
+          archiveTierNotice: { status: "failed" },
+        }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /couldn't be fully verified/i,
     );
   });
 
-  it("renders the hard disclaimer when archiveTierNotice.status is failed", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({
-        success: true,
-        mode: "direct",
-        data: mockData,
-        archiveTierNotice: { status: "failed" },
-      }),
-    );
-
+  it("renders no notice when archiveTierNotice is absent", () => {
     render(
       <ProjectedSizingCard
         workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
         repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
         onChange={() => {}}
+        onSnapshot={() => {}}
       />,
     );
 
-    await vi.waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(
-        /couldn't be fully verified/i,
-      ),
-    );
-  });
-
-  it("renders no notice when archiveTierNotice is absent", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      jsonResponse({ success: true, mode: "direct", data: mockData }),
-    );
-
-    render(
-      <ProjectedSizingCard
-        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
-        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
-        onChange={() => {}}
-      />,
-    );
-
-    // Wait for real data to actually render first — otherwise the queryBy
-    // assertions below would trivially pass before the fetch even resolves.
-    await vi.waitFor(() =>
-      expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0),
-    );
+    expect(screen.getAllByText("18.4 TB").length).toBeGreaterThan(0);
     expect(screen.queryByText(/adjusted internally/i)).not.toBeInTheDocument();
     expect(
       screen.queryByText(/couldn't be fully verified/i),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("Snapshot current sizing button", () => {
+  it("calls onSnapshot when clicked", async () => {
+    const user = userEvent.setup();
+    const onSnapshot = vi.fn();
+
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
+        onChange={() => {}}
+        onSnapshot={onSnapshot}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    );
+    expect(onSnapshot).toHaveBeenCalledTimes(1);
+  });
+
+  it("is disabled while isLoading is true", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={null}
+        isLoading={true}
+        error={null}
+        canSnapshot={false}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is disabled when error is set", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error="Upstream sizing API unreachable"
+        canSnapshot={false}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is disabled when data is null (no successful calculation yet)", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={null}
+        isLoading={false}
+        error={null}
+        canSnapshot={false}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
+  });
+
+  it("is enabled once data is present and there is no loading/error state", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={true}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeEnabled();
+  });
+
+  it("is disabled when canSnapshot is false, even with data present and no loading/error state (e.g. current form inputs are invalid)", () => {
+    render(
+      <ProjectedSizingCard
+        workloadData={DEFAULT_WORKLOAD_DATA_VALUES}
+        repositoryConfig={DEFAULT_REPOSITORY_CONFIG_VALUES}
+        data={{ mode: "direct", data: mockData }}
+        isLoading={false}
+        error={null}
+        canSnapshot={false}
+        onChange={() => {}}
+        onSnapshot={() => {}}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /snapshot current sizing/i }),
+    ).toBeDisabled();
   });
 });
